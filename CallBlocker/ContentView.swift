@@ -20,199 +20,219 @@ struct ContentView: View {
     
     var body: some View {
         NavigationView {
-            List {
-                // MARK: - 1. CÔNG TẮC BẬT / TẮT CHÍNH
-                Section(header: Text("TRẠNG THÁI HỆ THỐNG").font(.caption).foregroundColor(.gray)) {
-                    Toggle(isOn: $isMasterEnabled) {
-                        HStack {
-                            Image(systemName: isMasterEnabled ? "shield.fill" : "shield.slash.fill")
-                                .foregroundColor(isMasterEnabled ? .green : .red)
-                                .font(.title2)
-                            
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(isMasterEnabled ? "Chế độ Chặn: ĐANG BẬT" : "Chế độ Chặn: ĐANG TẮT")
-                                    .fontWeight(.bold)
-                                Text(isMasterEnabled ? "Tự động từ chối mọi cuộc gọi từ đầu số đã thêm" : "Tạm dừng chặn tất cả cuộc gọi")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
+            ScrollView {
+                VStack(spacing: 24) {
+                    
+                    // MARK: - 1. GIAO DIỆN SWITCH TO CĂN GIỮA (KIỂU CLOUDFLARE WARP)
+                    VStack(spacing: 16) {
+                        // Tên App kiểu WARP
+                        Text("CHẶN SỐ RÁC")
+                            .font(.system(size: 32, weight: .black, design: .rounded))
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: isMasterEnabled
+                                        ? [Color.orange, Color.red, Color.pink]
+                                        : [Color.gray, Color.secondary],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .tracking(2)
+                            .padding(.top, 10)
+                        
+                        // Nút Switch to lớn nằm chính giữa
+                        Button(action: {
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
+                                isMasterEnabled.toggle()
+                                BlockListManager.shared.isMasterEnabled = isMasterEnabled
+                                syncWithCallKitSilently()
+                            }
+                        }) {
+                            ZStack(alignment: isMasterEnabled ? .trailing : .leading) {
+                                Capsule()
+                                    .fill(
+                                        isMasterEnabled
+                                        ? LinearGradient(colors: [Color.orange, Color.red, Color.pink], startPoint: .leading, endPoint: .trailing)
+                                        : LinearGradient(colors: [Color(.systemGray4), Color(.systemGray5)], startPoint: .leading, endPoint: .trailing)
+                                    )
+                                    .frame(width: 140, height: 75)
+                                    .shadow(color: isMasterEnabled ? Color.red.opacity(0.35) : Color.clear, radius: 12, x: 0, y: 6)
+                                
+                                Circle()
+                                    .fill(Color.white)
+                                    .frame(width: 63, height: 63)
+                                    .padding(6)
+                                    .shadow(color: Color.black.opacity(0.18), radius: 4, x: 0, y: 2)
                             }
                         }
-                    }
-                    .onChange(of: isMasterEnabled) { newValue in
-                        BlockListManager.shared.isMasterEnabled = newValue
-                        syncWithCallKitSilently()
-                    }
-                    
-                    // Trạng thái cấp quyền trong Cài đặt iPhone (BẤM VÀO ĐỂ MỞ CÀI ĐẶT NGAY)
-                    Button(action: openCallBlockingSettings) {
-                        HStack {
-                            Image(systemName: isExtensionEnabledInSettings ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
-                                .foregroundColor(isExtensionEnabledInSettings ? .green : .orange)
+                        .buttonStyle(PlainButtonStyle())
+                        
+                        // Chữ trạng thái BẬT / TẮT to rõ ràng ở dưới nút Switch
+                        VStack(spacing: 4) {
+                            Text(isMasterEnabled ? "BẬT" : "TẮT")
+                                .font(.system(size: 24, weight: .heavy, design: .rounded))
+                                .foregroundColor(isMasterEnabled ? .red : .secondary)
+                                .tracking(3)
                             
-                            VStack(alignment: .leading, spacing: 1) {
-                                Text("Quyền iOS: \(extensionStatusText)")
-                                    .font(.subheadline)
+                            Text(isMasterEnabled ? "Đang tự động chặn các cuộc gọi từ đầu số đã thêm" : "Đã tạm dừng bảo vệ và chặn cuộc gọi")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                                .multilineTextAlignment(.center)
+                        }
+                    }
+                    .padding(.vertical, 12)
+                    
+                    // MARK: - 2. KHUNG THÊM ĐẦU SỐ MỚI
+                    VStack(alignment: .leading, spacing: 14) {
+                        Text("THÊM ĐẦU SỐ CẦN CHẶN")
+                            .font(.caption)
+                            .fontWeight(.bold)
+                            .foregroundColor(.secondary)
+                            .padding(.horizontal, 4)
+                        
+                        VStack(spacing: 12) {
+                            HStack {
+                                Text("+84")
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 8)
+                                    .background(Color(.systemGray5))
+                                    .cornerRadius(8)
+                                    .font(.system(.body, design: .monospaced))
                                     .fontWeight(.semibold)
-                                    .foregroundColor(.primary)
                                 
-                                Text(isExtensionEnabledInSettings ? "Đã sẵn sàng chặn cuộc gọi" : "Chạm vào đây để mở Cài đặt bật quyền")
-                                    .font(.caption2)
-                                    .foregroundColor(isExtensionEnabledInSettings ? .secondary : .orange)
+                                TextField("Ví dụ: 059 hoặc 0592*", text: $newPrefix)
+                                    .keyboardType(.numberPad)
+                                    .padding(8)
+                                    .background(Color(.systemBackground))
+                                    .cornerRadius(8)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .stroke(Color(.systemGray4), lineWidth: 1)
+                                    )
                             }
+                            
+                            TextField("Ghi chú (Ví dụ: Spam tài chính, Telesale)", text: $newNote)
+                                .padding(8)
+                                .background(Color(.systemBackground))
+                                .cornerRadius(8)
+                                .font(.footnote)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(Color(.systemGray4), lineWidth: 1)
+                                )
+                            
+                            Button(action: addPrefix) {
+                                HStack {
+                                    Spacer()
+                                    Image(systemName: "plus.circle.fill")
+                                    Text("Thêm Vào Danh Sách Chặn")
+                                        .fontWeight(.bold)
+                                    Spacer()
+                                }
+                                .padding(.vertical, 12)
+                                .background(
+                                    newPrefix.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                                    ? Color.gray.opacity(0.3)
+                                    : Color.blue
+                                )
+                                .foregroundColor(.white)
+                                .cornerRadius(10)
+                            }
+                            .disabled(newPrefix.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        }
+                        .padding(16)
+                        .background(Color(.secondarySystemGroupedBackground))
+                        .cornerRadius(16)
+                    }
+                    .padding(.horizontal)
+                    
+                    // MARK: - 3. DANH SÁCH ĐẦU SỐ BỊ CHẶN
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack {
+                            Text("DANH SÁCH ĐẦU SỐ BỊ CHẶN (\(rules.count))")
+                                .font(.caption)
+                                .fontWeight(.bold)
+                                .foregroundColor(.secondary)
                             
                             Spacer()
                             
                             if isReloading {
                                 ProgressView().scaleEffect(0.8)
-                            } else {
-                                Image(systemName: "chevron.right")
-                                    .font(.caption)
+                            }
+                        }
+                        .padding(.horizontal, 4)
+                        
+                        if rules.isEmpty {
+                            VStack(spacing: 8) {
+                                Image(systemName: "slash.circle")
+                                    .font(.system(size: 36))
                                     .foregroundColor(.gray)
+                                Text("Chưa có đầu số nào. Hãy thêm đầu số ở trên.")
+                                    .font(.footnote)
+                                    .foregroundColor(.secondary)
                             }
-                        }
-                    }
-                }
-                
-                // MARK: - 2. NHẬP ĐẦU SỐ MỚI
-                Section(header: Text("THÊM ĐẦU SỐ CẦN CHẶN").font(.caption).foregroundColor(.gray)) {
-                    VStack(alignment: .leading, spacing: 10) {
-                        HStack {
-                            Text("+84")
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 6)
-                                .background(Color(.systemGray5))
-                                .cornerRadius(8)
-                                .font(.system(.body, design: .monospaced))
-                            
-                            TextField("Ví dụ: 059 hoặc 0592*", text: $newPrefix)
-                                .keyboardType(.numberPad)
-                                .textFieldStyle(RoundedBorderTextFieldStyle())
-                        }
-                        
-                        TextField("Ghi chú (Ví dụ: Spam tài chính, Telesale)", text: $newNote)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .font(.footnote)
-                        
-                        Button(action: addPrefix) {
-                            HStack {
-                                Spacer()
-                                Image(systemName: "plus.circle.fill")
-                                Text("Thêm Vào Danh Sách Chặn")
-                                    .fontWeight(.semibold)
-                                Spacer()
-                            }
-                            .padding(.vertical, 8)
-                            .background(newPrefix.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? Color.gray.opacity(0.3) : Color.blue)
-                            .foregroundColor(.white)
-                            .cornerRadius(8)
-                        }
-                        .disabled(newPrefix.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                    }
-                    .padding(.vertical, 4)
-                }
-                
-                // MARK: - 3. DANH SÁCH CÁC ĐẦU SỐ ĐANG CHẶN
-                Section(header: HStack {
-                    Text("DANH SÁCH ĐẦU SỐ BỊ CHẶN (\(rules.count))")
-                    Spacer()
-                }.font(.caption).foregroundColor(.gray)) {
-                    if rules.isEmpty {
-                        Text("Chưa có đầu số nào. Hãy nhập đầu số (như 059) ở trên để bắt đầu.")
-                            .font(.footnote)
-                            .foregroundColor(.secondary)
-                            .padding(.vertical, 8)
-                    } else {
-                        ForEach(rules) { rule in
-                            HStack {
-                                VStack(alignment: .leading, spacing: 3) {
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 28)
+                            .background(Color(.secondarySystemGroupedBackground))
+                            .cornerRadius(16)
+                        } else {
+                            VStack(spacing: 8) {
+                                ForEach(rules) { rule in
                                     HStack {
-                                        Text("\(rule.prefix)*")
-                                            .font(.system(.headline, design: .monospaced))
-                                            .foregroundColor(.red)
-                                        Text("(Độ dài: \(rule.totalDigits) số)")
-                                            .font(.caption2)
-                                            .foregroundColor(.secondary)
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            HStack {
+                                                Text("\(rule.prefix)*")
+                                                    .font(.system(.headline, design: .monospaced))
+                                                    .foregroundColor(.red)
+                                                    .fontWeight(.bold)
+                                                
+                                                Text("(\(rule.totalDigits) chữ số)")
+                                                    .font(.caption2)
+                                                    .foregroundColor(.secondary)
+                                            }
+                                            
+                                            if !rule.note.isEmpty {
+                                                Text(rule.note)
+                                                    .font(.caption)
+                                                    .foregroundColor(.secondary)
+                                            }
+                                        }
+                                        
+                                        Spacer()
+                                        
+                                        // Nút bật / tắt riêng lẻ
+                                        Toggle("", isOn: Binding(
+                                            get: { rule.isEnabled },
+                                            set: { _ in
+                                                BlockListManager.shared.toggleRule(id: rule.id)
+                                                loadRules()
+                                                syncWithCallKitSilently()
+                                            }
+                                        ))
+                                        .labelsHidden()
+                                        
+                                        // Nút xoá số
+                                        Button(action: {
+                                            deleteRule(rule: rule)
+                                        }) {
+                                            Image(systemName: "trash")
+                                                .foregroundColor(.red.opacity(0.8))
+                                                .padding(8)
+                                        }
                                     }
-                                    if !rule.note.isEmpty {
-                                        Text(rule.note)
-                                            .font(.caption)
-                                            .foregroundColor(.secondary)
-                                    }
+                                    .padding(14)
+                                    .background(Color(.secondarySystemGroupedBackground))
+                                    .cornerRadius(14)
                                 }
-                                
-                                Spacer()
-                                
-                                Toggle("", isOn: Binding(
-                                    get: { rule.isEnabled },
-                                    set: { _ in
-                                        BlockListManager.shared.toggleRule(id: rule.id)
-                                        loadRules()
-                                        syncWithCallKitSilently()
-                                    }
-                                ))
-                                .labelsHidden()
                             }
-                            .padding(.vertical, 2)
                         }
-                        .onDelete(perform: deleteRules)
                     }
-                }
-                
-                // MARK: - 4. 2 NÚT MỞ CÀI ĐẶT CHUYÊN BIỆT
-                Section(header: Text("TRUY CẬP NHANH CÀI ĐẶT IPHONE").font(.caption).foregroundColor(.gray)) {
-                    // Nút 1: Mở Phone / Call Blocking & Identification
-                    Button(action: openCallBlockingSettings) {
-                        HStack(spacing: 12) {
-                            Image(systemName: "phone.badge.checkmark")
-                                .foregroundColor(.white)
-                                .frame(width: 32, height: 32)
-                                .background(Color.green)
-                                .cornerRadius(8)
-                            
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Mở Cài Đặt Chặn Cuộc Gọi")
-                                    .fontWeight(.bold)
-                                    .foregroundColor(.primary)
-                                Text("Cài đặt ➔ Điện thoại ➔ Chặn cuộc gọi")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
-                            
-                            Spacer()
-                            Image(systemName: "arrow.up.right")
-                                .foregroundColor(.secondary)
-                        }
-                        .padding(.vertical, 4)
-                    }
-                    
-                    // Nút 2: Mở Cài đặt Nhà phát triển / Quản lý thiết bị
-                    Button(action: openDeveloperDeviceSettings) {
-                        HStack(spacing: 12) {
-                            Image(systemName: "person.crop.circle.badge.checkmark")
-                                .foregroundColor(.white)
-                                .frame(width: 32, height: 32)
-                                .background(Color.blue)
-                                .cornerRadius(8)
-                            
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Mở Quản Lý Thiết Bị (Trust App)")
-                                    .fontWeight(.bold)
-                                    .foregroundColor(.primary)
-                                Text("Cài đặt ➔ Cài đặt chung ➔ VPN & Quản lý thiết bị")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
-                            
-                            Spacer()
-                            Image(systemName: "arrow.up.right")
-                                .foregroundColor(.secondary)
-                        }
-                        .padding(.vertical, 4)
-                    }
+                    .padding(.horizontal)
+                    .padding(.bottom, 24)
                 }
             }
-            .listStyle(InsetGroupedListStyle())
-            .navigationTitle("Chặn Số Rác")
+            .background(Color(.systemGroupedBackground).ignoresSafeArea())
+            .navigationBarHidden(true)
             .onAppear {
                 loadRules()
                 checkExtensionStatus()
@@ -238,16 +258,18 @@ struct ContentView: View {
         syncWithCallKitSilently()
     }
     
-    private func deleteRules(at offsets: IndexSet) {
-        BlockListManager.shared.removeRule(at: offsets)
-        loadRules()
-        syncWithCallKitSilently()
+    private func deleteRule(rule: BlockPrefixRule) {
+        if let index = rules.firstIndex(where: { $0.id == rule.id }) {
+            BlockListManager.shared.removeRule(at: IndexSet(integer: index))
+            loadRules()
+            syncWithCallKitSilently()
+        }
     }
     
     private func checkExtensionStatus() {
         BlockListManager.shared.checkExtensionStatus { status, error in
             if let error = error {
-                self.extensionStatusText = "Không thể kiểm tra (\(error.localizedDescription))"
+                self.extensionStatusText = "Không thể kiểm tra"
                 self.isExtensionEnabledInSettings = false
                 return
             }
@@ -278,40 +300,6 @@ struct ContentView: View {
             } else {
                 checkExtensionStatus()
             }
-        }
-    }
-    
-    // Mở Cài đặt Chặn cuộc gọi (Call Blocking)
-    private func openCallBlockingSettings() {
-        // Thử Deep-link trực tiếp vào trang Điện thoại nếu iOS cho phép, fallback về Cài đặt
-        if let url = URL(string: "App-Prefs:root=Phone"), UIApplication.shared.canOpenURL(url) {
-            UIApplication.shared.open(url, options: [:]) { success in
-                if !success {
-                    openStandardSettings()
-                }
-            }
-        } else {
-            openStandardSettings()
-        }
-    }
-    
-    // Mở Cài đặt Quản lý thiết bị & VPN (Trust Developer Profile)
-    private func openDeveloperDeviceSettings() {
-        // Thử Deep-link trực tiếp vào Managed Configuration List
-        if let url = URL(string: "App-Prefs:root=General&path=ManagedConfigurationList"), UIApplication.shared.canOpenURL(url) {
-            UIApplication.shared.open(url, options: [:]) { success in
-                if !success {
-                    openStandardSettings()
-                }
-            }
-        } else {
-            openStandardSettings()
-        }
-    }
-    
-    private func openStandardSettings() {
-        if let url = URL(string: UIApplication.openSettingsURLString) {
-            UIApplication.shared.open(url, options: [:], completionHandler: nil)
         }
     }
 }
