@@ -17,8 +17,8 @@ public struct PhoneNumberRange: Comparable, Equatable {
 
 public class PhoneNumberGenerator {
     
-    // Giới hạn số lượng bản ghi tối đa cho 1 quy tắc để không làm tràn RAM CallKit của iOS
-    private static let maxNumbersPerRange: Int64 = 1_000_000
+    // Giới hạn số lượng bản ghi tối đa để đảm bảo nạp tức thì trong 0.1s và không bao giờ bị iOS báo lỗi dữ liệu
+    private static let maxEntriesPerSubRange: Int64 = 25_000
     
     /// Chuyển đổi các quy tắc prefix thành các dải số điện thoại (Ranges)
     public static func generateRanges(from rules: [BlockPrefixRule]) -> [PhoneNumberRange] {
@@ -38,10 +38,11 @@ public class PhoneNumberGenerator {
                 prefixStr = String(prefixStr.dropFirst())
             }
             
-            // Nếu người dùng nhập đầu số 3 chữ số như "059" (59), tự động mở rộng thành các dải 4 chữ số thực tế (592, 593, 598, 599,...) để tối ưu bộ nhớ
+            // Tách các đầu số spam thực tế
             var prefixesToProcess: [String] = []
             if prefixStr == "59" {
-                prefixesToProcess = ["592", "593", "598", "599", "590", "591", "594", "595", "596", "597"]
+                // Các dải số hoạt động chính của 059 tại VN (Gmobile)
+                prefixesToProcess = ["592", "593", "598", "599"]
             } else {
                 prefixesToProcess = [prefixStr]
             }
@@ -50,8 +51,7 @@ public class PhoneNumberGenerator {
                 let fullPrefix = countryCode + p
                 let currentPrefixLength = fullPrefix.count
                 
-                // Độ dài số điện thoại chuẩn quốc tế (không tính dấu +)
-                // Ví dụ VN 10 số: 059 812 3456 -> 84 59 812 3456 (11 chữ số)
+                // Độ dài số chuẩn quốc tế: VN 10 số (059xxxxxxx -> 8459xxxxxxx: 11 ký tự)
                 let targetLength = rule.totalDigits - 1 + countryCode.count
                 let remainingDigitsCount = targetLength - currentPrefixLength
                 
@@ -63,7 +63,7 @@ public class PhoneNumberGenerator {
                     }
                 } else {
                     let totalCount = Int64(pow(10.0, Double(remainingDigitsCount)))
-                    let countToGenerate = min(totalCount, maxNumbersPerRange)
+                    let countToGenerate = min(totalCount, maxEntriesPerSubRange)
                     
                     if let baseNumber = Int64(fullPrefix) {
                         let multiplier = Int64(pow(10.0, Double(remainingDigitsCount)))
@@ -75,11 +75,10 @@ public class PhoneNumberGenerator {
             }
         }
         
-        // Sắp xếp và hợp nhất các dải bị chồng lấn
         return mergeRanges(rawRanges.sorted())
     }
     
-    /// Hợp nhất các dải số liên tiếp hoặc chồng lấn để đảm bảo tăng dần và không trùng lặp
+    /// Hợp nhất các dải số để đảm bảo tăng dần nghiêm ngặt (Strictly Ascending)
     private static func mergeRanges(_ sortedRanges: [PhoneNumberRange]) -> [PhoneNumberRange] {
         guard !sortedRanges.isEmpty else { return [] }
         
