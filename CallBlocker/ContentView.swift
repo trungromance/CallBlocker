@@ -40,7 +40,7 @@ struct ContentView: View {
                     }
                     .onChange(of: isMasterEnabled) { newValue in
                         BlockListManager.shared.isMasterEnabled = newValue
-                        syncWithCallKit()
+                        syncWithCallKitSilently()
                     }
                     
                     // Trạng thái cấp quyền trong Cài đặt iPhone
@@ -50,6 +50,12 @@ struct ContentView: View {
                         Text("Quyền iOS: \(extensionStatusText)")
                             .font(.footnote)
                             .foregroundColor(.secondary)
+                        
+                        Spacer()
+                        
+                        if isReloading {
+                            ProgressView().scaleEffect(0.8)
+                        }
                     }
                 }
                 
@@ -64,7 +70,7 @@ struct ContentView: View {
                                 .cornerRadius(8)
                                 .font(.system(.body, design: .monospaced))
                             
-                            TextField("Ví dụ: 059 hoặc 059*", text: $newPrefix)
+                            TextField("Ví dụ: 059 hoặc 0592*", text: $newPrefix)
                                 .keyboardType(.numberPad)
                                 .textFieldStyle(RoundedBorderTextFieldStyle())
                         }
@@ -95,9 +101,6 @@ struct ContentView: View {
                 Section(header: HStack {
                     Text("DANH SÁCH ĐẦU SỐ BỊ CHẶN (\(rules.count))")
                     Spacer()
-                    if isReloading {
-                        ProgressView().scaleEffect(0.8)
-                    }
                 }.font(.caption).foregroundColor(.gray)) {
                     if rules.isEmpty {
                         Text("Chưa có đầu số nào. Hãy nhập đầu số (như 059) ở trên để bắt đầu.")
@@ -130,7 +133,7 @@ struct ContentView: View {
                                     set: { _ in
                                         BlockListManager.shared.toggleRule(id: rule.id)
                                         loadRules()
-                                        syncWithCallKit()
+                                        syncWithCallKitSilently()
                                     }
                                 ))
                                 .labelsHidden()
@@ -141,51 +144,44 @@ struct ContentView: View {
                     }
                 }
                 
-                // MARK: - 4. NÚT ĐỒNG BỘ THỦ CÔNG
-                Section {
-                    Button(action: syncWithCallKit) {
-                        HStack {
-                            Spacer()
-                            if isReloading {
-                                ProgressView()
-                                    .padding(.trailing, 6)
-                            } else {
-                                Image(systemName: "arrow.triangle.2.circlepath")
-                            }
-                            Text("Áp Dụng & Đồng Bộ Với iOS")
-                                .fontWeight(.bold)
-                            Spacer()
-                        }
-                    }
-                    .disabled(isReloading)
-                }
-                
-                // MARK: - 5. HƯỚNG DẪN KÍCH HOẠT TRÊN IPHONE
-                Section(header: Text("HƯỚNG DẪN KÍCH HOẠT QUYỀN TRÊN IPHONE").font(.caption).foregroundColor(.gray)) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack(alignment: .top) {
+                // MARK: - 4. HƯỚNG DẪN VÀ NÚT MỞ CÀI ĐẶT
+                Section(header: Text("CÀI ĐẶT QUYỀN TRÊN IPHONE").font(.caption).foregroundColor(.gray)) {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Để chặn cuộc gọi, bạn cần cấp quyền cho ứng dụng:")
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
+                        
+                        HStack(alignment: .top, spacing: 8) {
                             Text("1.")
                                 .fontWeight(.bold)
-                            Text("Vào **Cài đặt (Settings)** trên iPhone.")
+                            Text("Mở **Cài đặt** ➔ **Điện thoại** ➔ **Chặn & Nhận dạng cuộc gọi**.")
+                                .font(.footnote)
                         }
-                        HStack(alignment: .top) {
+                        
+                        HStack(alignment: .top, spacing: 8) {
                             Text("2.")
                                 .fontWeight(.bold)
-                            Text("Chọn mục **Điện thoại (Phone)**.")
+                            Text("Bật công tắc của **Chặn số rác** sang màu xanh.")
+                                .font(.footnote)
                         }
-                        HStack(alignment: .top) {
-                            Text("3.")
-                                .fontWeight(.bold)
-                            Text("Nhấn **Chặn & Nhận dạng cuộc gọi (Call Blocking & Identification)**.")
+                        
+                        // Nút chuyển nhanh vào Cài đặt iOS
+                        Button(action: openPhoneSettings) {
+                            HStack {
+                                Spacer()
+                                Image(systemName: "gearshape.fill")
+                                Text("Mở Cài Đặt (Settings) iPhone")
+                                    .fontWeight(.bold)
+                                Image(systemName: "arrow.up.right")
+                                Spacer()
+                            }
+                            .padding(.vertical, 10)
+                            .background(Color.blue)
+                            .foregroundColor(.white)
+                            .cornerRadius(10)
                         }
-                        HStack(alignment: .top) {
-                            Text("4.")
-                                .fontWeight(.bold)
-                            Text("BẬT công tắc của ứng dụng **Chặn số rác**.")
-                        }
+                        .padding(.top, 4)
                     }
-                    .font(.footnote)
-                    .foregroundColor(.secondary)
                     .padding(.vertical, 4)
                 }
             }
@@ -196,7 +192,7 @@ struct ContentView: View {
                 checkExtensionStatus()
             }
             .alert(isPresented: $showAlert) {
-                Alert(title: Text("Thông báo"), message: Text(alertMessage), dismissButton: .default(Text("Đã hiểu")))
+                Alert(title: Text("Lưu ý"), message: Text(alertMessage), dismissButton: .default(Text("Đã hiểu")))
             }
         }
     }
@@ -213,13 +209,13 @@ struct ContentView: View {
         newPrefix = ""
         newNote = ""
         loadRules()
-        syncWithCallKit()
+        syncWithCallKitSilently()
     }
     
     private func deleteRules(at offsets: IndexSet) {
         BlockListManager.shared.removeRule(at: offsets)
         loadRules()
-        syncWithCallKit()
+        syncWithCallKitSilently()
     }
     
     private func checkExtensionStatus() {
@@ -231,10 +227,10 @@ struct ContentView: View {
             }
             switch status {
             case .enabled:
-                self.extensionStatusText = "Đã kích hoạt trong Cài đặt"
+                self.extensionStatusText = "Đã kích hoạt"
                 self.isExtensionEnabledInSettings = true
             case .disabled:
-                self.extensionStatusText = "Chưa bật trong Cài đặt Điện thoại"
+                self.extensionStatusText = "Chưa bật quyền"
                 self.isExtensionEnabledInSettings = false
             case .unknown:
                 self.extensionStatusText = "Chưa xác định"
@@ -246,17 +242,27 @@ struct ContentView: View {
         }
     }
     
-    private func syncWithCallKit() {
+    // Tự động đồng bộ ngầm mượt mà, không bật popup làm phiền người dùng
+    private func syncWithCallKitSilently() {
         isReloading = true
         BlockListManager.shared.reloadExtension { error in
             isReloading = false
             if let error = error {
-                self.alertMessage = "Cập nhật thất bại: \(error.localizedDescription).\n\nHãy đảm bảo bạn đã bật ứng dụng trong: Cài đặt -> Điện thoại -> Chặn & Nhận dạng cuộc gọi."
+                // Chỉ hiển thị cảnh báo nếu có lỗi thực sự xảy ra
+                self.alertMessage = "Chưa đồng bộ được: \(error.localizedDescription).\n\nVui lòng bấm nút 'Mở Cài Đặt iPhone' bên dưới để bật quyền cho ứng dụng."
+                self.showAlert = true
             } else {
-                self.alertMessage = "Đã đồng bộ thành công dải số chặn vào hệ thống iOS!"
                 checkExtensionStatus()
             }
-            self.showAlert = true
+        }
+    }
+    
+    // Mở trực tiếp Cài đặt của iPhone
+    private func openPhoneSettings() {
+        if let url = URL(string: UIApplication.openSettingsURLString) {
+            if UIApplication.shared.canOpenURL(url) {
+                UIApplication.shared.open(url, options: [:], completionHandler: nil)
+            }
         }
     }
 }
