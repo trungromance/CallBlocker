@@ -1,0 +1,45 @@
+name: Build IPA for AltStore / AltServer
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build iOS IPA
+    runs-on: macos-14
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Select Xcode Version
+        run: sudo xcode-select -switch /Applications/Xcode_15.4.app/Contents/Developer
+
+      - name: Build Archive
+        run: |
+          xcodebuild archive \
+            -project CallBlocker.xcodeproj \
+            -scheme CallBlocker \
+            -configuration Release \
+            -archivePath build/CallBlocker.xcarchive \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            AD_HOC_CODE_SIGNING_ALLOWED=YES
+
+      - name: Package Payload and Create .IPA
+        run: |
+          mkdir -p build/Payload
+          cp -r build/CallBlocker.xcarchive/Products/Applications/CallBlocker.app build/Payload/
+          cd build
+          zip -r CallBlocker.ipa Payload
+          cd ..
+
+      - name: Upload IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: CallBlocker-IPA
+          path: build/CallBlocker.ipa
+          if-no-files-found: error

@@ -1,0 +1,418 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		10000001 /* CallBlockerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20000001 /* CallBlockerApp.swift */; };
+		10000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20000002 /* ContentView.swift */; };
+		10000003 /* BlockListManager.swift in Sources (App) */ = {isa = PBXBuildFile; fileRef = 20000003 /* BlockListManager.swift */; };
+		10000004 /* PhoneNumberGenerator.swift in Sources (App) */ = {isa = PBXBuildFile; fileRef = 20000004 /* PhoneNumberGenerator.swift */; };
+		10000005 /* CallDirectoryHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20000005 /* CallDirectoryHandler.swift */; };
+		10000006 /* BlockListManager.swift in Sources (Ext) */ = {isa = PBXBuildFile; fileRef = 20000003 /* BlockListManager.swift */; };
+		10000007 /* PhoneNumberGenerator.swift in Sources (Ext) */ = {isa = PBXBuildFile; fileRef = 20000004 /* PhoneNumberGenerator.swift */; };
+		10000008 /* CallBlockerExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 30000002 /* CallBlockerExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		40000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 00000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 30000001;
+			remoteInfo = CallBlockerExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		50000001 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				10000008 /* CallBlockerExtension.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		20000001 /* CallBlockerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallBlockerApp.swift; sourceTree = "<group>"; };
+		20000002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		20000003 /* BlockListManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlockListManager.swift; sourceTree = "<group>"; };
+		20000004 /* PhoneNumberGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneNumberGenerator.swift; sourceTree = "<group>"; };
+		20000005 /* CallDirectoryHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallDirectoryHandler.swift; sourceTree = "<group>"; };
+		20000006 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		20000007 /* CallBlocker.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CallBlocker.entitlements; sourceTree = "<group>"; };
+		20000008 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		20000009 /* CallBlockerExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CallBlockerExtension.entitlements; sourceTree = "<group>"; };
+		30000000 /* CallBlocker.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CallBlocker.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		30000002 /* CallBlockerExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CallBlockerExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		60000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		60000002 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		00000002 = {
+			isa = PBXGroup;
+			children = (
+				00000003 /* CallBlocker */,
+				00000004 /* CallBlockerExtension */,
+				00000005 /* Shared */,
+				00000006 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		00000003 /* CallBlocker */ = {
+			isa = PBXGroup;
+			children = (
+				20000001 /* CallBlockerApp.swift */,
+				20000002 /* ContentView.swift */,
+				20000006 /* Info.plist */,
+				20000007 /* CallBlocker.entitlements */,
+			);
+			path = CallBlocker;
+			sourceTree = "<group>";
+		};
+		00000004 /* CallBlockerExtension */ = {
+			isa = PBXGroup;
+			children = (
+				20000005 /* CallDirectoryHandler.swift */,
+				20000008 /* Info.plist */,
+				20000009 /* CallBlockerExtension.entitlements */,
+			);
+			path = CallBlockerExtension;
+			sourceTree = "<group>";
+		};
+		00000005 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				20000003 /* BlockListManager.swift */,
+				20000004 /* PhoneNumberGenerator.swift */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		00000006 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				30000000 /* CallBlocker.app */,
+				30000002 /* CallBlockerExtension.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		30000000 /* CallBlocker */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 70000001 /* Build configuration list for PBXNativeTarget "CallBlocker" */;
+			buildPhases = (
+				80000001 /* Sources */,
+				60000001 /* Frameworks */,
+				50000001 /* Embed App Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				90000001 /* PBXTargetDependency */,
+			);
+			name = CallBlocker;
+			productName = CallBlocker;
+			productReference = 30000000 /* CallBlocker.app */;
+			productType = "com.apple.product-type.application";
+		};
+		30000001 /* CallBlockerExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 70000002 /* Build configuration list for PBXNativeTarget "CallBlockerExtension" */;
+			buildPhases = (
+				80000002 /* Sources */,
+				60000002 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = CallBlockerExtension;
+			productName = CallBlockerExtension;
+			productReference = 30000002 /* CallBlockerExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		00000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					30000000 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+					30000001 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+				};
+			};
+			buildConfigurationList = 70000000 /* Build configuration list for PBXProject "CallBlocker" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 00000002;
+			productRefGroup = 00000006 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				30000000 /* CallBlocker */,
+				30000001 /* CallBlockerExtension */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		80000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				10000001 /* CallBlockerApp.swift in Sources */,
+				10000002 /* ContentView.swift in Sources */,
+				10000003 /* BlockListManager.swift in Sources (App) */,
+				10000004 /* PhoneNumberGenerator.swift in Sources (App) */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		80000002 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				10000005 /* CallDirectoryHandler.swift in Sources */,
+				10000006 /* BlockListManager.swift in Sources (Ext) */,
+				10000007 /* PhoneNumberGenerator.swift in Sources (Ext) */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		90000001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 30000001 /* CallBlockerExtension */;
+			targetProxy = 40000001 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		A0000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		A0000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		B0000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_ENTITLEMENTS = CallBlocker/CallBlocker.entitlements;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = CallBlocker/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Chặn 059";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.altserver.callblocker;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		B0000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_ENTITLEMENTS = CallBlocker/CallBlocker.entitlements;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = CallBlocker/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Chặn 059";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.altserver.callblocker;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		C0000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_ENTITLEMENTS = CallBlockerExtension/CallBlockerExtension.entitlements;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = CallBlockerExtension/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.altserver.callblocker.extension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		C0000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_ENTITLEMENTS = CallBlockerExtension/CallBlockerExtension.entitlements;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = CallBlockerExtension/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.altserver.callblocker.extension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		70000000 /* Build configuration list for PBXProject "CallBlocker" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A0000001 /* Debug */,
+				A0000002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		70000001 /* Build configuration list for PBXNativeTarget "CallBlocker" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B0000001 /* Debug */,
+				B0000002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		70000002 /* Build configuration list for PBXNativeTarget "CallBlockerExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C0000001 /* Debug */,
+				C0000002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+	};
+	rootObject = 00000001 /* Project object */;
+}
