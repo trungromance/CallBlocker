@@ -6,13 +6,12 @@ class CallDirectoryHandler: CXCallDirectoryProvider {
     override func beginRequest(with context: CXCallDirectoryExtensionContext) {
         context.delegate = self
 
-        // Nếu người dùng đã từng import và đây là lần import lại đầy đủ
+        // Nếu đây là lần reload/update (isIncremental), xoá toàn bộ danh sách cũ trước khi nạp lại
         if context.isIncremental {
-            addAllBlockingPhoneNumbers(to: context)
-        } else {
-            addAllBlockingPhoneNumbers(to: context)
+            context.removeAllBlockingEntries()
         }
 
+        addAllBlockingPhoneNumbers(to: context)
         context.completeRequest()
     }
 
@@ -21,14 +20,13 @@ class CallDirectoryHandler: CXCallDirectoryProvider {
         
         // Kiểm tra nút Bật/Tắt tổng thể của App
         guard manager.isMasterEnabled else {
-            // Nếu tắt, không nạp số nào vào danh sách chặn
             return
         }
         
         let rules = manager.getRules()
         let ranges = PhoneNumberGenerator.generateRanges(from: rules)
         
-        // CallKit yêu cầu thêm số theo thứ tự số nguyên TĂNG DẦN tuyệt đối
+        // Nạp các số điện thoại theo thứ tự TĂNG DẦN tuyệt đối
         for range in ranges {
             var currentNumber = range.start
             while currentNumber <= range.end {
@@ -41,7 +39,6 @@ class CallDirectoryHandler: CXCallDirectoryProvider {
 
 extension CallDirectoryHandler: CXCallDirectoryExtensionContextDelegate {
     func requestFailed(for extensionContext: CXCallDirectoryExtensionContext, withError error: Error) {
-        // Xử lý khi nạp dữ liệu thất bại
-        print("CallDirectoryHandler error: \(error.localizedDescription)")
+        print("CallDirectoryHandler requestFailed: \(error.localizedDescription)")
     }
 }
