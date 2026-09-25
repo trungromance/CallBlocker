@@ -1,5 +1,8 @@
 import Foundation
 import CallKit
+#if canImport(SwiftUI)
+import SwiftUI
+#endif
 
 public struct BlockPrefixRule: Codable, Identifiable, Equatable {
     public var id: UUID = UUID()
@@ -23,7 +26,7 @@ public class BlockListManager {
     public static let shared = BlockListManager()
     
     // App Group identifier (Cấu hình chung giữa Main App và Extension)
-    public static let appGroupID = "group.com.altserver.callblocker"
+    public static let appGroupID = "group.com.luongtrung.callblocker"
     private let userDefaultsKey = "saved_block_rules"
     private let isMasterEnabledKey = "is_call_blocker_master_enabled"
     
@@ -31,11 +34,18 @@ public class BlockListManager {
         return UserDefaults(suiteName: BlockListManager.appGroupID) ?? UserDefaults.standard
     }
     
+    // Đường dẫn file lưu trữ chia sẻ dự phòng
+    private var sharedFileURL: URL? {
+        if let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: BlockListManager.appGroupID) {
+            return containerURL.appendingPathComponent("call_blocker_rules.json")
+        }
+        return nil
+    }
+    
     private init() {}
     
     public var isMasterEnabled: Bool {
         get {
-            // Mặc định là bật (true) nếu chưa lưu
             if sharedDefaults.object(forKey: isMasterEnabledKey) == nil {
                 return true
             }
@@ -47,29 +57,39 @@ public class BlockListManager {
     }
     
     public func getRules() -> [BlockPrefixRule] {
-        guard let data = sharedDefaults.data(forKey: userDefaultsKey),
-              let rules = try? JSONDecoder().decode([BlockPrefixRule].self, from: data) else {
-            // Giá trị mặc định ban đầu: 059*
-            return [
-                BlockPrefixRule(prefix: "059", totalDigits: 10, countryCode: "84", isEnabled: true, note: "Chặn dải đầu số 059*")
-            ]
+        // Đọc từ UserDefaults
+        if let data = sharedDefaults.data(forKey: userDefaultsKey),
+           let rules = try? JSONDecoder().decode([BlockPrefixRule].self, from: data) {
+            return rules
         }
-        return rules
+        
+        // Đọc dự phòng từ Shared File nếu có
+        if let fileURL = sharedFileURL,
+           let data = try? Data(contentsOf: fileURL),
+           let rules = try? JSONDecoder().decode([BlockPrefixRule].self, from: data) {
+            return rules
+        }
+        
+        // Mặc định ban đầu: 059*
+        return [
+            BlockPrefixRule(prefix: "059", totalDigits: 10, countryCode: "84", isEnabled: true, note: "Chặn dải đầu số 059*")
+        ]
     }
     
     public func saveRules(_ rules: [BlockPrefixRule]) {
         if let data = try? JSONEncoder().encode(rules) {
             sharedDefaults.set(data, forKey: userDefaultsKey)
+            if let fileURL = sharedFileURL {
+                try? data.write(to: fileURL)
+            }
         }
     }
     
     public func addRule(prefix: String, totalDigits: Int = 10, countryCode: String = "84", note: String = "") {
         var rules = getRules()
-        // Chuẩn hoá prefix: loại bỏ dấu *, khoảng trắng
         let cleanPrefix = prefix.replacingOccurrences(of: "*", with: "").trimmingCharacters(in: .whitespacesAndNewlines)
         guard !cleanPrefix.isEmpty else { return }
         
-        // Tránh trùng lặp
         if !rules.contains(where: { $0.prefix == cleanPrefix && $0.countryCode == countryCode && $0.totalDigits == totalDigits }) {
             rules.append(BlockPrefixRule(prefix: cleanPrefix, totalDigits: totalDigits, countryCode: countryCode, isEnabled: true, note: note))
             saveRules(rules)
@@ -78,7 +98,11 @@ public class BlockListManager {
     
     public func removeRule(at offsets: IndexSet) {
         var rules = getRules()
-        rules.remove(atOffsets: offsets)
+        for index in offsets.sorted(by: >) {
+            if index < rules.count {
+                rules.remove(at: index)
+            }
+        }
         saveRules(rules)
     }
     
@@ -90,9 +114,17 @@ public class BlockListManager {
         }
     }
     
+    private var extensionIdentifier: String {
+        let baseID = Bundle.main.bundleIdentifier ?? "com.luongtrung.callblocker"
+        if baseID.hasSuffix(".extension") {
+            return baseID
+        }
+        return "\(baseID).extension"
+    }
+    
     // Yêu cầu iOS reload lại extension để áp dụng danh sách mới
     public func reloadExtension(completion: @escaping (Error?) -> Void) {
-        CXCallDirectoryManager.sharedInstance.reloadExtension(withIdentifier: "com.altserver.callblocker.extension") { error in
+        CXCallDirectoryManager.sharedInstance.reloadExtension(withIdentifier: extensionIdentifier) { error in
             DispatchQueue.main.async {
                 completion(error)
             }
@@ -101,7 +133,7 @@ public class BlockListManager {
     
     // Kiểm tra trạng thái cấp quyền của Extension trong Cài đặt iPhone
     public func checkExtensionStatus(completion: @escaping (CXCallDirectoryManager.EnabledStatus, Error?) -> Void) {
-        CXCallDirectoryManager.sharedInstance.getEnabledStatusForExtension(withIdentifier: "com.altserver.callblocker.extension") { status, error in
+        CXCallDirectoryManager.sharedInstance.getEnabledStatusForExtension(withIdentifier: extensionIdentifier) { status, error in
             DispatchQueue.main.async {
                 completion(status, error)
             }
