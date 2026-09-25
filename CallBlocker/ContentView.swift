@@ -27,17 +27,8 @@ struct ContentView: View {
                     VStack(spacing: 16) {
                         // Tên App kiểu WARP
                         Text("CHẶN SỐ RÁC")
-                            .font(.system(size: 32, weight: .black, design: .rounded))
-                            .foregroundStyle(
-                                LinearGradient(
-                                    colors: isMasterEnabled
-                                        ? [Color.orange, Color.red, Color.pink]
-                                        : [Color.gray, Color.secondary],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                            .tracking(2)
+                            .font(.system(size: 30, weight: .heavy, design: .rounded))
+                            .foregroundColor(isMasterEnabled ? Color.orange : Color.gray)
                             .padding(.top, 10)
                         
                         // Nút Switch to lớn nằm chính giữa
@@ -71,8 +62,7 @@ struct ContentView: View {
                         VStack(spacing: 4) {
                             Text(isMasterEnabled ? "BẬT" : "TẮT")
                                 .font(.system(size: 24, weight: .heavy, design: .rounded))
-                                .foregroundColor(isMasterEnabled ? .red : .secondary)
-                                .tracking(3)
+                                .foregroundColor(isMasterEnabled ? Color.red : Color.secondary)
                             
                             Text(isMasterEnabled ? "Đang tự động chặn các cuộc gọi từ đầu số đã thêm" : "Đã tạm dừng bảo vệ và chặn cuộc gọi")
                                 .font(.subheadline)
@@ -85,8 +75,7 @@ struct ContentView: View {
                     // MARK: - 2. KHUNG THÊM ĐẦU SỐ MỚI
                     VStack(alignment: .leading, spacing: 14) {
                         Text("THÊM ĐẦU SỐ CẦN CHẶN")
-                            .font(.caption)
-                            .fontWeight(.bold)
+                            .font(.system(size: 13, weight: .bold))
                             .foregroundColor(.secondary)
                             .padding(.horizontal, 4)
                         
@@ -98,7 +87,6 @@ struct ContentView: View {
                                     .background(Color(.systemGray5))
                                     .cornerRadius(8)
                                     .font(.system(.body, design: .monospaced))
-                                    .fontWeight(.semibold)
                                 
                                 TextField("Ví dụ: 059 hoặc 0592*", text: $newPrefix)
                                     .keyboardType(.numberPad)
@@ -126,7 +114,7 @@ struct ContentView: View {
                                     Spacer()
                                     Image(systemName: "plus.circle.fill")
                                     Text("Thêm Vào Danh Sách Chặn")
-                                        .fontWeight(.bold)
+                                        .font(.system(size: 16, weight: .bold))
                                     Spacer()
                                 }
                                 .padding(.vertical, 12)
@@ -150,8 +138,7 @@ struct ContentView: View {
                     VStack(alignment: .leading, spacing: 10) {
                         HStack {
                             Text("DANH SÁCH ĐẦU SỐ BỊ CHẶN (\(rules.count))")
-                                .font(.caption)
-                                .fontWeight(.bold)
+                                .font(.system(size: 13, weight: .bold))
                                 .foregroundColor(.secondary)
                             
                             Spacer()
@@ -184,7 +171,6 @@ struct ContentView: View {
                                                 Text("\(rule.prefix)*")
                                                     .font(.system(.headline, design: .monospaced))
                                                     .foregroundColor(.red)
-                                                    .fontWeight(.bold)
                                                 
                                                 Text("(\(rule.totalDigits) chữ số)")
                                                     .font(.caption2)
