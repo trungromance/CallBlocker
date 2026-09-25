@@ -2,6 +2,30 @@ import SwiftUI
 import CallKit
 
 struct ContentView: View {
+    @State private var selectedTab: Int = 0
+    
+    var body: some View {
+        TabView(selection: $selectedTab) {
+            MainBlockerView()
+                .tabItem {
+                    Image(systemName: "shield.fill")
+                    Text("Chặn cuộc gọi")
+                }
+                .tag(0)
+            
+            HistoryAndLookupView()
+                .tabItem {
+                    Image(systemName: "clock.arrow.circlepath")
+                    Text("Lịch sử & Tra cứu")
+                }
+                .tag(1)
+        }
+        .accentColor(.orange)
+    }
+}
+
+// MARK: - TAB 1: GIAO DIỆN CHÍNH (WARP STYLE)
+struct MainBlockerView: View {
     @State private var isMasterEnabled: Bool = BlockListManager.shared.isMasterEnabled
     @State private var rules: [BlockPrefixRule] = []
     
@@ -323,6 +347,222 @@ struct ContentView: View {
             } else {
                 checkExtensionStatus()
             }
+        }
+    }
+}
+
+// MARK: - TAB 2: LỊCH SỬ & TRA CỨU SỐ ĐIỆN THOẠI
+struct HistoryAndLookupView: View {
+    @State private var logs: [BlockLogItem] = []
+    @State private var testNumber: String = ""
+    @State private var checkResultText: String = ""
+    @State private var checkResultBlocked: Bool? = nil
+    @State private var totalProtectedCount: Int = 0
+    
+    var body: some View {
+        NavigationView {
+            ScrollView {
+                VStack(spacing: 20) {
+                    
+                    // MARK: - THẺ THỐNG KÊ TỔNG QUAN
+                    HStack(spacing: 16) {
+                        Image(systemName: "shield.lefthalf.filled")
+                            .font(.system(size: 38))
+                            .foregroundColor(.orange)
+                        
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Tổng số đang bảo vệ")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            
+                            Text("\(totalProtectedCount.formatted()) số điện thoại")
+                                .font(.title3)
+                                .fontWeight(.bold)
+                                .foregroundColor(.primary)
+                        }
+                        
+                        Spacer()
+                    }
+                    .padding(18)
+                    .background(Color(.secondarySystemGroupedBackground))
+                    .cornerRadius(16)
+                    .padding(.horizontal)
+                    .padding(.top, 8)
+                    
+                    // MARK: - CÔNG CỤ TRA CỨU & KIỂM TRA SỐ
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("TRA CỨU & KIỂM TRA SỐ ĐIỆN THOẠI")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .padding(.horizontal, 4)
+                        
+                        VStack(spacing: 12) {
+                            HStack {
+                                Image(systemName: "magnifyingglass")
+                                    .foregroundColor(.secondary)
+                                
+                                TextField("Nhập số cần kiểm tra (VD: 0592888999)", text: $testNumber)
+                                    .keyboardType(.numberPad)
+                                    .onChange(of: testNumber) { _ in
+                                        checkResultBlocked = nil
+                                        checkResultText = ""
+                                    }
+                            }
+                            .padding(10)
+                            .background(Color(.systemBackground))
+                            .cornerRadius(10)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .stroke(Color(.systemGray4), lineWidth: 1)
+                            )
+                            
+                            Button(action: performNumberCheck) {
+                                HStack {
+                                    Spacer()
+                                    Text("Kiểm Tra Trạng Thái Chặn")
+                                        .font(.subheadline)
+                                    Spacer()
+                                }
+                                .padding(.vertical, 10)
+                                .background(testNumber.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? Color.gray.opacity(0.3) : Color.orange)
+                                .foregroundColor(.white)
+                                .cornerRadius(8)
+                            }
+                            .disabled(testNumber.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                            
+                            // Kết quả kiểm tra
+                            if let isBlocked = checkResultBlocked {
+                                HStack(spacing: 10) {
+                                    Image(systemName: isBlocked ? "xmark.shield.fill" : "checkmark.shield.fill")
+                                        .foregroundColor(isBlocked ? .red : .green)
+                                        .font(.title2)
+                                    
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(isBlocked ? "SỐ NÀY SẼ BỊ CHẶN" : "SỐ NÀY ĐƯỢC PHÉP GỌI")
+                                            .font(.subheadline)
+                                            .fontWeight(.bold)
+                                            .foregroundColor(isBlocked ? .red : .green)
+                                        
+                                        Text(checkResultText)
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                    }
+                                    Spacer()
+                                }
+                                .padding(12)
+                                .background(isBlocked ? Color.red.opacity(0.1) : Color.green.opacity(0.1))
+                                .cornerRadius(10)
+                            }
+                        }
+                        .padding(16)
+                        .background(Color(.secondarySystemGroupedBackground))
+                        .cornerRadius(14)
+                    }
+                    .padding(.horizontal)
+                    
+                    // MARK: - NHẬT KÝ HOẠT ĐỘNG
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack {
+                            Text("NHẬT KÝ HOẠT ĐỘNG (\(logs.count))")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            
+                            Spacer()
+                            
+                            if !logs.isEmpty {
+                                Button("Xoá nhật ký") {
+                                    BlockListManager.shared.clearLogs()
+                                    loadLogs()
+                                }
+                                .font(.caption)
+                                .foregroundColor(.red)
+                            }
+                        }
+                        .padding(.horizontal, 4)
+                        
+                        if logs.isEmpty {
+                            Text("Chưa có lịch sử hoạt động nào.")
+                                .font(.footnote)
+                                .foregroundColor(.secondary)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 24)
+                                .background(Color(.secondarySystemGroupedBackground))
+                                .cornerRadius(14)
+                        } else {
+                            VStack(spacing: 8) {
+                                ForEach(logs) { log in
+                                    HStack(alignment: .top, spacing: 12) {
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .foregroundColor(.orange)
+                                            .font(.subheadline)
+                                            .padding(.top, 2)
+                                        
+                                        VStack(alignment: .leading, spacing: 3) {
+                                            Text(log.title)
+                                                .font(.subheadline)
+                                                .fontWeight(.semibold)
+                                                .foregroundColor(.primary)
+                                            
+                                            Text(log.detail)
+                                                .font(.caption)
+                                                .foregroundColor(.secondary)
+                                            
+                                            Text(log.date.formatted(date: .abbreviated, time: .shortened))
+                                                .font(.caption2)
+                                                .foregroundColor(.gray)
+                                        }
+                                        
+                                        Spacer()
+                                    }
+                                    .padding(12)
+                                    .background(Color(.secondarySystemGroupedBackground))
+                                    .cornerRadius(12)
+                                }
+                            }
+                        }
+                    }
+                    .padding(.horizontal)
+                    
+                    // MARK: - GỢI Ý XEM LỊCH SỬ TRÊN IPHONE
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "info.circle")
+                                .foregroundColor(.blue)
+                            Text("Xem cuộc gọi rác đã bị từ chối")
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+                        }
+                        Text("Khi có số rác gọi đến, iOS sẽ tự động ngắt kết nối trước khi rung chuông. Bạn có thể xem lại các cuộc gọi này trong ứng dụng **Điện thoại ➔ Gần đây** trên iPhone.")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(14)
+                    .background(Color(.secondarySystemGroupedBackground))
+                    .cornerRadius(12)
+                    .padding(.horizontal)
+                    .padding(.bottom, 24)
+                }
+            }
+            .background(Color(.systemGroupedBackground).ignoresSafeArea())
+            .navigationTitle("Lịch Sử & Tra Cứu")
+            .onAppear {
+                loadLogs()
+            }
+        }
+    }
+    
+    private func loadLogs() {
+        self.logs = BlockListManager.shared.getLogs()
+        self.totalProtectedCount = BlockListManager.shared.getTotalProtectedNumbersCount()
+    }
+    
+    private func performNumberCheck() {
+        let result = BlockListManager.shared.checkNumberBlocked(input: testNumber)
+        self.checkResultBlocked = result.isBlocked
+        if result.isBlocked, let rule = result.matchedRule {
+            self.checkResultText = "Số này khớp với quy tắc chặn: \(rule.prefix)* (\(rule.note.isEmpty ? "Đang bật" : rule.note))"
+        } else {
+            self.checkResultText = "Số này không nằm trong bất kỳ dải số bị chặn nào."
         }
     }
 }
