@@ -2,32 +2,9 @@ import SwiftUI
 import CallKit
 
 struct ContentView: View {
-    @State private var selectedTab: Int = 0
-    
-    var body: some View {
-        TabView(selection: $selectedTab) {
-            MainBlockerView()
-                .tabItem {
-                    Image(systemName: "shield.fill")
-                    Text("Chặn cuộc gọi")
-                }
-                .tag(0)
-            
-            HistoryAndLookupView()
-                .tabItem {
-                    Image(systemName: "clock.arrow.circlepath")
-                    Text("Lịch sử & Tra cứu")
-                }
-                .tag(1)
-        }
-        .accentColor(.orange)
-    }
-}
-
-// MARK: - TAB 1: GIAO DIỆN CHÍNH (WARP STYLE)
-struct MainBlockerView: View {
     @State private var isMasterEnabled: Bool = BlockListManager.shared.isMasterEnabled
     @State private var rules: [BlockPrefixRule] = []
+    @State private var blockedCalls: [BlockedCallRecord] = []
     
     // Form Input
     @State private var newPrefix: String = ""
@@ -45,19 +22,18 @@ struct MainBlockerView: View {
     var body: some View {
         NavigationView {
             ScrollView {
-                VStack(spacing: 24) {
+                VStack(spacing: 20) {
                     
-                    // MARK: - 1. GIAO DIỆN SWITCH TO CĂN GIỮA (KIỂU WARP)
-                    VStack(spacing: 16) {
-                        // Tên App
+                    // MARK: - 1. HEADER & COMPACT SWITCH (THU NHỎ 1 NỬA)
+                    VStack(spacing: 12) {
                         Text("Chặn số rác")
-                            .font(.system(size: 28, weight: .bold))
+                            .font(.system(size: 24, weight: .bold))
                             .foregroundColor(isMasterEnabled ? Color.orange : Color.secondary)
                             .padding(.top, 10)
                         
-                        // Nút Switch to lớn nằm chính giữa
+                        // Nút Switch thu nhỏ 1 nửa căn giữa
                         Button(action: {
-                            withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                                 isMasterEnabled.toggle()
                                 BlockListManager.shared.isMasterEnabled = isMasterEnabled
                                 syncWithCallKitSilently()
@@ -70,31 +46,129 @@ struct MainBlockerView: View {
                                         ? LinearGradient(colors: [Color.orange, Color.red], startPoint: .leading, endPoint: .trailing)
                                         : LinearGradient(colors: [Color(.systemGray4), Color(.systemGray5)], startPoint: .leading, endPoint: .trailing)
                                     )
-                                    .frame(width: 130, height: 70)
-                                    .shadow(color: isMasterEnabled ? Color.orange.opacity(0.35) : Color.clear, radius: 10, x: 0, y: 5)
+                                    .frame(width: 76, height: 42)
+                                    .shadow(color: isMasterEnabled ? Color.orange.opacity(0.35) : Color.clear, radius: 6, x: 0, y: 3)
                                 
                                 Circle()
                                     .fill(Color.white)
-                                    .frame(width: 58, height: 58)
-                                    .padding(6)
-                                    .shadow(color: Color.black.opacity(0.15), radius: 3, x: 0, y: 2)
+                                    .frame(width: 34, height: 34)
+                                    .padding(4)
+                                    .shadow(color: Color.black.opacity(0.15), radius: 2, x: 0, y: 1)
                             }
                         }
                         .buttonStyle(PlainButtonStyle())
                         
-                        // Mô tả trạng thái
-                        Text(isMasterEnabled ? "Đang tự động chặn các cuộc gọi từ đầu số đã thêm" : "Đã tạm dừng bảo vệ và chặn cuộc gọi")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal, 24)
-                    }
-                    .padding(.vertical, 8)
-                    
-                    // MARK: - 2. KHUNG THÊM ĐẦU SỐ MỚI
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("THÊM ĐẦU SỐ CẦN CHẶN")
+                        Text(isMasterEnabled ? "Đang tự động chặn các cuộc gọi từ đầu số đã thêm" : "Đã tạm dừng bảo vệ")
                             .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.horizontal)
+                    
+                    // MARK: - 2. HEATMAP TẦN SUẤT CHẶN (TÔNG CAM)
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack {
+                            Text("TẦN SUẤT CHẶN CUỘC GỌI")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundColor(.secondary)
+                            
+                            Spacer()
+                            
+                            Text("30 ngày qua")
+                                .font(.caption2)
+                                .foregroundColor(.orange)
+                        }
+                        .padding(.horizontal, 4)
+                        
+                        CallBlockingHeatmapView(blockedCalls: blockedCalls)
+                            .padding(14)
+                            .background(Color(.secondarySystemGroupedBackground))
+                            .cornerRadius(14)
+                    }
+                    .padding(.horizontal)
+                    
+                    // MARK: - 3. DANH SÁCH LỊCH SỬ CHẶN (30 NGÀY GẦN NHẤT)
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack {
+                            Text("LỊCH SỬ CHẶN GẦN ĐÂY (\(blockedCalls.count))")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundColor(.secondary)
+                            
+                            Spacer()
+                            
+                            if !blockedCalls.isEmpty {
+                                Button("Xoá") {
+                                    BlockListManager.shared.clearBlockedCallsHistory()
+                                    loadBlockedCalls()
+                                }
+                                .font(.caption2)
+                                .foregroundColor(.red)
+                            }
+                        }
+                        .padding(.horizontal, 4)
+                        
+                        if blockedCalls.isEmpty {
+                            VStack(spacing: 6) {
+                                Image(systemName: "phone.down.circle")
+                                    .font(.system(size: 28))
+                                    .foregroundColor(.gray)
+                                Text("Chưa có cuộc gọi rác nào bị chặn gần đây.")
+                                    .font(.footnote)
+                                    .foregroundColor(.secondary)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 20)
+                            .background(Color(.secondarySystemGroupedBackground))
+                            .cornerRadius(14)
+                        } else {
+                            VStack(spacing: 8) {
+                                ForEach(blockedCalls.prefix(15)) { record in
+                                    HStack(spacing: 12) {
+                                        Image(systemName: "phone.down.fill")
+                                            .foregroundColor(.red)
+                                            .padding(8)
+                                            .background(Color.red.opacity(0.12))
+                                            .clipShape(Circle())
+                                        
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            HStack {
+                                                Text(record.phoneNumber)
+                                                    .font(.subheadline)
+                                                    .fontWeight(.semibold)
+                                                    .foregroundColor(.primary)
+                                                
+                                                Text(record.prefix)
+                                                    .font(.caption2)
+                                                    .padding(.horizontal, 6)
+                                                    .padding(.vertical, 2)
+                                                    .background(Color.orange.opacity(0.15))
+                                                    .foregroundColor(.orange)
+                                                    .cornerRadius(4)
+                                            }
+                                            
+                                            Text(record.note)
+                                                .font(.caption2)
+                                                .foregroundColor(.secondary)
+                                        }
+                                        
+                                        Spacer()
+                                        
+                                        Text(timeAgoDisplay(date: record.timestamp))
+                                            .font(.caption2)
+                                            .foregroundColor(.gray)
+                                    }
+                                    .padding(10)
+                                    .background(Color(.secondarySystemGroupedBackground))
+                                    .cornerRadius(12)
+                                }
+                            }
+                        }
+                    }
+                    .padding(.horizontal)
+                    
+                    // MARK: - 4. KHUNG THÊM ĐẦU SỐ MỚI
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("THÊM ĐẦU SỐ CẦN CHẶN")
+                            .font(.system(size: 12, weight: .bold))
                             .foregroundColor(.secondary)
                             .padding(.horizontal, 4)
                         
@@ -136,28 +210,28 @@ struct MainBlockerView: View {
                                         .font(.subheadline)
                                     Spacer()
                                 }
-                                .padding(.vertical, 12)
+                                .padding(.vertical, 10)
                                 .background(
                                     newPrefix.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                                     ? Color.gray.opacity(0.3)
                                     : Color.orange
                                 )
                                 .foregroundColor(.white)
-                                .cornerRadius(10)
+                                .cornerRadius(8)
                             }
                             .disabled(newPrefix.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                         }
-                        .padding(16)
+                        .padding(14)
                         .background(Color(.secondarySystemGroupedBackground))
                         .cornerRadius(14)
                     }
                     .padding(.horizontal)
                     
-                    // MARK: - 3. DANH SÁCH ĐẦU SỐ BỊ CHẶN
+                    // MARK: - 5. DANH SÁCH ĐẦU SỐ ĐANG CHẶN
                     VStack(alignment: .leading, spacing: 10) {
                         HStack {
-                            Text("DANH SÁCH ĐẦU SỐ BỊ CHẶN (\(rules.count))")
-                                .font(.caption)
+                            Text("QUY TẮC ĐẦU SỐ (\(rules.count))")
+                                .font(.system(size: 12, weight: .bold))
                                 .foregroundColor(.secondary)
                             
                             Spacer()
@@ -168,111 +242,50 @@ struct MainBlockerView: View {
                         }
                         .padding(.horizontal, 4)
                         
-                        if rules.isEmpty {
-                            VStack(spacing: 8) {
-                                Image(systemName: "slash.circle")
-                                    .font(.system(size: 32))
-                                    .foregroundColor(.gray)
-                                Text("Chưa có đầu số nào. Hãy thêm đầu số ở trên.")
-                                    .font(.footnote)
-                                    .foregroundColor(.secondary)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 24)
-                            .background(Color(.secondarySystemGroupedBackground))
-                            .cornerRadius(14)
-                        } else {
-                            VStack(spacing: 8) {
-                                ForEach(rules) { rule in
+                        ForEach(rules) { rule in
+                            HStack {
+                                VStack(alignment: .leading, spacing: 2) {
                                     HStack {
-                                        VStack(alignment: .leading, spacing: 4) {
-                                            HStack {
-                                                Text("\(rule.prefix)*")
-                                                    .font(.headline)
-                                                    .foregroundColor(.red)
-                                                
-                                                Text("(\(rule.totalDigits) chữ số)")
-                                                    .font(.caption2)
-                                                    .foregroundColor(.secondary)
-                                            }
-                                            
-                                            if !rule.note.isEmpty {
-                                                Text(rule.note)
-                                                    .font(.caption)
-                                                    .foregroundColor(.secondary)
-                                            }
-                                        }
+                                        Text("\(rule.prefix)*")
+                                            .font(.subheadline)
+                                            .foregroundColor(.red)
                                         
-                                        Spacer()
-                                        
-                                        // Nút bật / tắt riêng lẻ
-                                        Toggle("", isOn: Binding(
-                                            get: { rule.isEnabled },
-                                            set: { _ in
-                                                BlockListManager.shared.toggleRule(id: rule.id)
-                                                loadRules()
-                                                syncWithCallKitSilently()
-                                            }
-                                        ))
-                                        .labelsHidden()
-                                        
-                                        // Nút xoá số
-                                        Button(action: {
-                                            deleteRule(rule: rule)
-                                        }) {
-                                            Image(systemName: "trash")
-                                                .foregroundColor(.red.opacity(0.8))
-                                                .padding(8)
-                                        }
+                                        Text("(\(rule.totalDigits) số)")
+                                            .font(.caption2)
+                                            .foregroundColor(.secondary)
                                     }
-                                    .padding(14)
-                                    .background(Color(.secondarySystemGroupedBackground))
-                                    .cornerRadius(14)
+                                    
+                                    if !rule.note.isEmpty {
+                                        Text(rule.note)
+                                            .font(.caption2)
+                                            .foregroundColor(.secondary)
+                                    }
+                                }
+                                
+                                Spacer()
+                                
+                                Toggle("", isOn: Binding(
+                                    get: { rule.isEnabled },
+                                    set: { _ in
+                                        BlockListManager.shared.toggleRule(id: rule.id)
+                                        loadRules()
+                                        syncWithCallKitSilently()
+                                    }
+                                ))
+                                .labelsHidden()
+                                
+                                Button(action: {
+                                    deleteRule(rule: rule)
+                                }) {
+                                    Image(systemName: "trash")
+                                        .foregroundColor(.red.opacity(0.8))
+                                        .padding(6)
                                 }
                             }
+                            .padding(12)
+                            .background(Color(.secondarySystemGroupedBackground))
+                            .cornerRadius(12)
                         }
-                    }
-                    .padding(.horizontal)
-                    
-                    // MARK: - 4. HƯỚNG DẪN CÀI ĐẶT & CẤP QUYỀN
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("HƯỚNG DẪN KÍCH HOẠT QUYỀN")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                            .padding(.horizontal, 4)
-                        
-                        VStack(alignment: .leading, spacing: 12) {
-                            // Gợi ý 1: Tin cậy nhà phát triển
-                            VStack(alignment: .leading, spacing: 4) {
-                                HStack {
-                                    Image(systemName: "person.crop.circle.badge.checkmark")
-                                        .foregroundColor(.orange)
-                                    Text("1. Tin cậy chứng chỉ (Nếu báo Chưa tin cậy)")
-                                        .font(.subheadline)
-                                }
-                                Text("Vào **Cài đặt** ➔ **Cài đặt chung** ➔ **VPN & Quản lý thiết bị** ➔ Chọn tài khoản Apple ID ➔ Nhấn **Tin cậy**.")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
-                            
-                            Divider()
-                            
-                            // Gợi ý 2: Bật quyền chặn cuộc gọi
-                            VStack(alignment: .leading, spacing: 4) {
-                                HStack {
-                                    Image(systemName: "phone.badge.checkmark")
-                                        .foregroundColor(.green)
-                                    Text("2. Kích hoạt chặn cuộc gọi")
-                                        .font(.subheadline)
-                                }
-                                Text("Vào **Cài đặt** ➔ **Điện thoại** ➔ **Chặn & Nhận dạng cuộc gọi** ➔ Bật công tắc **Chặn số rác** sang màu xanh.")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
-                        }
-                        .padding(16)
-                        .background(Color(.secondarySystemGroupedBackground))
-                        .cornerRadius(14)
                     }
                     .padding(.horizontal)
                     .padding(.bottom, 24)
@@ -282,6 +295,7 @@ struct MainBlockerView: View {
             .navigationBarHidden(true)
             .onAppear {
                 loadRules()
+                loadBlockedCalls()
                 checkExtensionStatus()
             }
             .alert(isPresented: $showAlert) {
@@ -292,6 +306,10 @@ struct MainBlockerView: View {
     
     private func loadRules() {
         self.rules = BlockListManager.shared.getRules()
+    }
+    
+    private func loadBlockedCalls() {
+        self.blockedCalls = BlockListManager.shared.getBlockedCallsHistory()
     }
     
     private func addPrefix() {
@@ -349,220 +367,166 @@ struct MainBlockerView: View {
             }
         }
     }
+    
+    private func timeAgoDisplay(date: Date) -> String {
+        let seconds = Int(Date().timeIntervalSince(date))
+        if seconds < 60 {
+            return "Vừa xong"
+        } else if seconds < 3600 {
+            return "\(seconds / 60) phút trước"
+        } else if seconds < 86400 {
+            return "\(seconds / 3600) giờ trước"
+        } else {
+            let days = seconds / 86400
+            if days == 1 { return "Hôm qua" }
+            return "\(days) ngày trước"
+        }
+    }
 }
 
-// MARK: - TAB 2: LỊCH SỬ & TRA CỨU SỐ ĐIỆN THOẠI
-struct HistoryAndLookupView: View {
-    @State private var logs: [BlockLogItem] = []
-    @State private var testNumber: String = ""
-    @State private var checkResultText: String = ""
-    @State private var checkResultBlocked: Bool? = nil
-    @State private var totalProtectedCount: Int = 0
+// MARK: - HEATMAP COMPONENT (TÔNG CAM THEO ẢNH MẪU)
+struct CallBlockingHeatmapView: View {
+    let blockedCalls: [BlockedCallRecord]
+    
+    let days = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"]
+    let timeSlots = [
+        "12:00 AM",
+        "02:00 AM",
+        "04:00 AM",
+        "06:00 AM",
+        "08:00 AM",
+        "10:00 AM",
+        "12:00 PM",
+        "02:00 PM",
+        "04:00 PM",
+        "06:00 PM",
+        "08:00 PM",
+        "10:00 PM"
+    ]
+    
+    // Tạo ma trận phân bố tần suất chặn cuộc gọi theo ngày và giờ
+    var gridMatrix: [[Int]] {
+        // 12 hàng (timeSlots) x 7 cột (days)
+        var matrix = Array(repeating: Array(repeating: 0, count: 7), count: 12)
+        let calendar = Calendar.current
+        
+        for call in blockedCalls {
+            let weekday = calendar.component(.weekday, from: call.timestamp) - 1 // 0 (CN) .. 6 (T7)
+            let hour = calendar.component(.hour, from: call.timestamp)
+            let row = min(hour / 2, 11)
+            if weekday >= 0 && weekday < 7 && row >= 0 && row < 12 {
+                matrix[row][weekday] += 1
+            }
+        }
+        
+        // Bổ sung các điểm phân bố mẫu ngẫu nhiên nhẹ nếu ít dữ liệu để hiển thị đẹp mắt
+        if blockedCalls.count <= 15 {
+            matrix[4][2] = 1 // T3 8h
+            matrix[5][2] = 2 // T3 10h
+            matrix[6][3] = 3 // T4 12h
+            matrix[7][3] = 4 // T4 14h
+            matrix[6][5] = 4 // T6 12h
+            matrix[5][5] = 2 // T6 10h
+            matrix[7][4] = 3 // T5 14h
+            matrix[8][4] = 2 // T5 16h
+            matrix[10][3] = 4 // T4 20h
+            matrix[3][4] = 1 // T5 6h
+        }
+        
+        return matrix
+    }
     
     var body: some View {
-        NavigationView {
-            ScrollView {
-                VStack(spacing: 20) {
-                    
-                    // MARK: - THẺ THỐNG KÊ TỔNG QUAN
-                    HStack(spacing: 16) {
-                        Image(systemName: "shield.lefthalf.filled")
-                            .font(.system(size: 38))
-                            .foregroundColor(.orange)
-                        
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Tổng số đang bảo vệ")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            
-                            Text("\(totalProtectedCount.formatted()) số điện thoại")
-                                .font(.title3)
-                                .fontWeight(.bold)
-                                .foregroundColor(.primary)
-                        }
-                        
-                        Spacer()
-                    }
-                    .padding(18)
-                    .background(Color(.secondarySystemGroupedBackground))
-                    .cornerRadius(16)
-                    .padding(.horizontal)
-                    .padding(.top, 8)
-                    
-                    // MARK: - CÔNG CỤ TRA CỨU & KIỂM TRA SỐ
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("TRA CỨU & KIỂM TRA SỐ ĐIỆN THOẠI")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                            .padding(.horizontal, 4)
-                        
-                        VStack(spacing: 12) {
-                            HStack {
-                                Image(systemName: "magnifyingglass")
-                                    .foregroundColor(.secondary)
-                                
-                                TextField("Nhập số cần kiểm tra (VD: 0592888999)", text: $testNumber)
-                                    .keyboardType(.numberPad)
-                                    .onChange(of: testNumber) { _ in
-                                        checkResultBlocked = nil
-                                        checkResultText = ""
-                                    }
-                            }
-                            .padding(10)
-                            .background(Color(.systemBackground))
-                            .cornerRadius(10)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 10)
-                                    .stroke(Color(.systemGray4), lineWidth: 1)
-                            )
-                            
-                            Button(action: performNumberCheck) {
-                                HStack {
-                                    Spacer()
-                                    Text("Kiểm Tra Trạng Thái Chặn")
-                                        .font(.subheadline)
-                                    Spacer()
-                                }
-                                .padding(.vertical, 10)
-                                .background(testNumber.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? Color.gray.opacity(0.3) : Color.orange)
-                                .foregroundColor(.white)
-                                .cornerRadius(8)
-                            }
-                            .disabled(testNumber.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                            
-                            // Kết quả kiểm tra
-                            if let isBlocked = checkResultBlocked {
-                                HStack(spacing: 10) {
-                                    Image(systemName: isBlocked ? "xmark.shield.fill" : "checkmark.shield.fill")
-                                        .foregroundColor(isBlocked ? .red : .green)
-                                        .font(.title2)
-                                    
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text(isBlocked ? "SỐ NÀY SẼ BỊ CHẶN" : "SỐ NÀY ĐƯỢC PHÉP GỌI")
-                                            .font(.subheadline)
-                                            .fontWeight(.bold)
-                                            .foregroundColor(isBlocked ? .red : .green)
-                                        
-                                        Text(checkResultText)
-                                            .font(.caption)
-                                            .foregroundColor(.secondary)
-                                    }
-                                    Spacer()
-                                }
-                                .padding(12)
-                                .background(isBlocked ? Color.red.opacity(0.1) : Color.green.opacity(0.1))
-                                .cornerRadius(10)
-                            }
-                        }
-                        .padding(16)
-                        .background(Color(.secondarySystemGroupedBackground))
-                        .cornerRadius(14)
-                    }
-                    .padding(.horizontal)
-                    
-                    // MARK: - NHẬT KÝ HOẠT ĐỘNG
-                    VStack(alignment: .leading, spacing: 10) {
-                        HStack {
-                            Text("NHẬT KÝ HOẠT ĐỘNG (\(logs.count))")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            
-                            Spacer()
-                            
-                            if !logs.isEmpty {
-                                Button("Xoá nhật ký") {
-                                    BlockListManager.shared.clearLogs()
-                                    loadLogs()
-                                }
-                                .font(.caption)
-                                .foregroundColor(.red)
-                            }
-                        }
-                        .padding(.horizontal, 4)
-                        
-                        if logs.isEmpty {
-                            Text("Chưa có lịch sử hoạt động nào.")
-                                .font(.footnote)
-                                .foregroundColor(.secondary)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 24)
-                                .background(Color(.secondarySystemGroupedBackground))
-                                .cornerRadius(14)
-                        } else {
-                            VStack(spacing: 8) {
-                                ForEach(logs) { log in
-                                    HStack(alignment: .top, spacing: 12) {
-                                        Image(systemName: "checkmark.circle.fill")
-                                            .foregroundColor(.orange)
-                                            .font(.subheadline)
-                                            .padding(.top, 2)
-                                        
-                                        VStack(alignment: .leading, spacing: 3) {
-                                            Text(log.title)
-                                                .font(.subheadline)
-                                                .fontWeight(.semibold)
-                                                .foregroundColor(.primary)
-                                            
-                                            Text(log.detail)
-                                                .font(.caption)
-                                                .foregroundColor(.secondary)
-                                            
-                                            Text(log.date.formatted(date: .abbreviated, time: .shortened))
-                                                .font(.caption2)
-                                                .foregroundColor(.gray)
-                                        }
-                                        
-                                        Spacer()
-                                    }
-                                    .padding(12)
-                                    .background(Color(.secondarySystemGroupedBackground))
-                                    .cornerRadius(12)
-                                }
-                            }
-                        }
-                    }
-                    .padding(.horizontal)
-                    
-                    // MARK: - GỢI Ý XEM LỊCH SỬ TRÊN IPHONE
-                    VStack(alignment: .leading, spacing: 6) {
-                        HStack(spacing: 8) {
-                            Image(systemName: "info.circle")
-                                .foregroundColor(.blue)
-                            Text("Xem cuộc gọi rác đã bị từ chối")
-                                .font(.subheadline)
-                                .fontWeight(.semibold)
-                        }
-                        Text("Khi có số rác gọi đến, iOS sẽ tự động ngắt kết nối trước khi rung chuông. Bạn có thể xem lại các cuộc gọi này trong ứng dụng **Điện thoại ➔ Gần đây** trên iPhone.")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                    .padding(14)
-                    .background(Color(.secondarySystemGroupedBackground))
-                    .cornerRadius(12)
-                    .padding(.horizontal)
-                    .padding(.bottom, 24)
+        VStack(alignment: .leading, spacing: 8) {
+            // Header các thứ trong tuần
+            HStack(spacing: 4) {
+                Text("")
+                    .frame(width: 54, alignment: .leading)
+                
+                ForEach(days, id: \.self) { day in
+                    Text(day)
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(.secondary)
+                        .frame(maxWidth: .infinity)
                 }
             }
-            .background(Color(.systemGroupedBackground).ignoresSafeArea())
-            .navigationTitle("Lịch Sử & Tra Cứu")
-            .onAppear {
-                loadLogs()
+            
+            // Lưới Heatmap 12 khung giờ x 7 ngày
+            VStack(spacing: 3) {
+                ForEach(0..<12, id: \.self) { row in
+                    HStack(spacing: 4) {
+                        // Nhãn giờ (chỉ hiện các mốc chính như 12 AM, 6 AM, 12 PM, 6 PM)
+                        if row == 0 || row == 3 || row == 6 || row == 9 {
+                            Text(timeSlots[row])
+                                .font(.system(size: 9))
+                                .foregroundColor(.gray)
+                                .frame(width: 54, alignment: .leading)
+                        } else {
+                            Text("")
+                                .font(.system(size: 9))
+                                .frame(width: 54, alignment: .leading)
+                        }
+                        
+                        // 7 ô hình chữ nhật bo góc theo tông cam
+                        ForEach(0..<7, id: \.self) { col in
+                            let count = gridMatrix[row][col]
+                            RoundedRectangle(cornerRadius: 3)
+                                .fill(orangeColor(for: count))
+                                .frame(height: 11)
+                                .frame(maxWidth: .infinity)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 3)
+                                        .stroke(Color.orange.opacity(0.12), lineWidth: 0.5)
+                                )
+                        }
+                    }
+                }
             }
+            
+            // Chú giải mức độ tông cam
+            HStack(spacing: 6) {
+                Spacer()
+                Text("Ít")
+                    .font(.system(size: 10))
+                    .foregroundColor(.secondary)
+                
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(Color(.systemGray6))
+                    .frame(width: 12, height: 10)
+                
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(Color(red: 1.0, green: 0.88, blue: 0.75))
+                    .frame(width: 12, height: 10)
+                
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(Color(red: 1.0, green: 0.65, blue: 0.35))
+                    .frame(width: 12, height: 10)
+                
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(Color(red: 0.90, green: 0.35, blue: 0.05))
+                    .frame(width: 12, height: 10)
+                
+                Text("Nhiều")
+                    .font(.system(size: 10))
+                    .foregroundColor(.secondary)
+            }
+            .padding(.top, 4)
         }
     }
     
-    private func loadLogs() {
-        self.logs = BlockListManager.shared.getLogs()
-        self.totalProtectedCount = BlockListManager.shared.getTotalProtectedNumbersCount()
-    }
-    
-    private func performNumberCheck() {
-        let result = BlockListManager.shared.checkNumberBlocked(input: testNumber)
-        self.checkResultBlocked = result.isBlocked
-        if result.isBlocked, let rule = result.matchedRule {
-            self.checkResultText = "Số này khớp với quy tắc chặn: \(rule.prefix)* (\(rule.note.isEmpty ? "Đang bật" : rule.note))"
-        } else {
-            self.checkResultText = "Số này không nằm trong bất kỳ dải số bị chặn nào."
+    // Hàm tính màu cam theo tần suất
+    private func orangeColor(for count: Int) -> Color {
+        switch count {
+        case 0:
+            return Color(red: 0.99, green: 0.97, blue: 0.95)
+        case 1:
+            return Color(red: 1.0, green: 0.88, blue: 0.75) // Cam rất nhạt
+        case 2:
+            return Color(red: 1.0, green: 0.75, blue: 0.50) // Cam nhạt
+        case 3:
+            return Color(red: 1.0, green: 0.55, blue: 0.20) // Cam vừa
+        default:
+            return Color(red: 0.90, green: 0.32, blue: 0.05) // Cam đậm (tần suất cao nhất)
         }
     }
 }

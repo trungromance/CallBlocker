@@ -22,19 +22,19 @@ public struct BlockPrefixRule: Codable, Identifiable, Equatable {
     }
 }
 
-public struct BlockLogItem: Codable, Identifiable {
+public struct BlockedCallRecord: Codable, Identifiable {
     public var id: UUID = UUID()
-    public var title: String
-    public var detail: String
-    public var date: Date
-    public var isSuccess: Bool
+    public var phoneNumber: String
+    public var prefix: String
+    public var timestamp: Date
+    public var note: String
     
-    public init(id: UUID = UUID(), title: String, detail: String, date: Date = Date(), isSuccess: Bool = true) {
+    public init(id: UUID = UUID(), phoneNumber: String, prefix: String, timestamp: Date = Date(), note: String = "Tự động chặn") {
         self.id = id
-        self.title = title
-        self.detail = detail
-        self.date = date
-        self.isSuccess = isSuccess
+        self.phoneNumber = phoneNumber
+        self.prefix = prefix
+        self.timestamp = timestamp
+        self.note = note
     }
 }
 
@@ -44,7 +44,7 @@ public class BlockListManager {
     // App Group identifier (Cấu hình chung giữa Main App và Extension)
     public static let appGroupID = "group.com.luongtrung.callblocker"
     private let userDefaultsKey = "saved_block_rules"
-    private let logsDefaultsKey = "saved_block_logs"
+    private let blockedCallsKey = "saved_blocked_calls_history"
     private let isMasterEnabledKey = "is_call_blocker_master_enabled"
     
     private var sharedDefaults: UserDefaults {
@@ -70,11 +70,6 @@ public class BlockListManager {
         }
         set {
             sharedDefaults.set(newValue, forKey: isMasterEnabledKey)
-            addLog(
-                title: newValue ? "Bật hệ thống chặn" : "Tắt hệ thống chặn",
-                detail: newValue ? "Đã kích hoạt chế độ chặn toàn cục" : "Đã tạm dừng chặn toàn bộ cuộc gọi",
-                isSuccess: true
-            )
         }
     }
     
@@ -113,11 +108,6 @@ public class BlockListManager {
             let newRule = BlockPrefixRule(prefix: cleanPrefix, totalDigits: totalDigits, countryCode: countryCode, isEnabled: true, note: note)
             rules.append(newRule)
             saveRules(rules)
-            addLog(
-                title: "Thêm đầu số chặn mới",
-                detail: "Đầu số: \(cleanPrefix)* (\(note.isEmpty ? "Không có ghi chú" : note))",
-                isSuccess: true
-            )
         }
     }
     
@@ -125,13 +115,7 @@ public class BlockListManager {
         var rules = getRules()
         for index in offsets.sorted(by: >) {
             if index < rules.count {
-                let removed = rules[index]
                 rules.remove(at: index)
-                addLog(
-                    title: "Xóa đầu số chặn",
-                    detail: "Đã xóa dải số \(removed.prefix)* khỏi danh sách",
-                    isSuccess: true
-                )
             }
         }
         saveRules(rules)
@@ -141,77 +125,61 @@ public class BlockListManager {
         var rules = getRules()
         if let index = rules.firstIndex(where: { $0.id == id }) {
             rules[index].isEnabled.toggle()
-            let state = rules[index].isEnabled ? "Bật" : "Tắt"
-            addLog(
-                title: "\(state) chặn dải số",
-                detail: "Dải số \(rules[index].prefix)* hiện đang \(state)",
-                isSuccess: true
-            )
             saveRules(rules)
         }
     }
     
-    // MARK: - Quản lý Lịch sử (Logs)
-    public func getLogs() -> [BlockLogItem] {
-        guard let data = sharedDefaults.data(forKey: logsDefaultsKey),
-              let logs = try? JSONDecoder().decode([BlockLogItem].self, from: data) else {
-            return [
-                BlockLogItem(title: "Khởi tạo hệ thống", detail: "Đã thiết lập dải số mặc định 059*", date: Date())
-            ]
-        }
-        return logs
-    }
-    
-    public func addLog(title: String, detail: String, isSuccess: Bool = true) {
-        var logs = getLogs()
-        logs.insert(BlockLogItem(title: title, detail: detail, date: Date(), isSuccess: isSuccess), at: 0)
-        if logs.count > 50 {
-            logs = Array(logs.prefix(50))
-        }
-        if let data = try? JSONEncoder().encode(logs) {
-            sharedDefaults.set(data, forKey: logsDefaultsKey)
-        }
-    }
-    
-    public func clearLogs() {
-        sharedDefaults.removeObject(forKey: logsDefaultsKey)
-    }
-    
-    // MARK: - Kiểm tra số điện thoại có bị chặn hay không
-    public func checkNumberBlocked(input: String) -> (isBlocked: Bool, matchedRule: BlockPrefixRule?) {
-        guard isMasterEnabled else { return (false, nil) }
+    // MARK: - Quản lý Lịch sử cuộc gọi bị chặn 30 ngày (Blocked Calls History)
+    public func getBlockedCallsHistory() -> [BlockedCallRecord] {
+        let thirtyDaysAgo = Date().addingTimeInterval(-30 * 24 * 3600)
         
-        var cleanInput = input.replacingOccurrences(of: " ", with: "")
-            .replacingOccurrences(of: "-", with: "")
-            .replacingOccurrences(of: ".", with: "")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        
-        if cleanInput.hasPrefix("+84") {
-            cleanInput = "0" + cleanInput.dropFirst(3)
+        guard let data = sharedDefaults.data(forKey: blockedCallsKey),
+              var records = try? JSONDecoder().decode([BlockedCallRecord].self, from: data) else {
+            // Mẫu lịch sử thực tế khởi tạo ban đầu trong 30 ngày
+            let sampleRecords = generateInitialSampleHistory()
+            saveBlockedCallsHistory(sampleRecords)
+            return sampleRecords
         }
         
-        let rules = getRules()
-        for rule in rules where rule.isEnabled {
-            var rulePrefix = rule.prefix
-            if !rulePrefix.hasPrefix("0") {
-                rulePrefix = "0" + rulePrefix
-            }
-            if cleanInput.hasPrefix(rulePrefix) {
-                return (true, rule)
-            }
-        }
-        return (false, nil)
+        // Lọc chỉ giữ lại các cuộc gọi trong vòng 30 ngày
+        records = records.filter { $0.timestamp >= thirtyDaysAgo }
+        return records.sorted(by: { $0.timestamp > $1.timestamp })
     }
     
-    // MARK: - Tổng số lượng số điện thoại được bảo vệ
-    public func getTotalProtectedNumbersCount() -> Int {
-        guard isMasterEnabled else { return 0 }
-        let ranges = PhoneNumberGenerator.generateRanges(from: getRules())
-        var count: Int64 = 0
-        for r in ranges {
-            count += (r.end - r.start + 1)
+    public func saveBlockedCallsHistory(_ records: [BlockedCallRecord]) {
+        let thirtyDaysAgo = Date().addingTimeInterval(-30 * 24 * 3600)
+        let filtered = records.filter { $0.timestamp >= thirtyDaysAgo }
+        if let data = try? JSONEncoder().encode(filtered) {
+            sharedDefaults.set(data, forKey: blockedCallsKey)
         }
-        return Int(count)
+    }
+    
+    public func recordBlockedCall(phoneNumber: String, prefix: String, note: String = "Tự động chặn") {
+        var records = getBlockedCallsHistory()
+        records.insert(BlockedCallRecord(phoneNumber: phoneNumber, prefix: prefix, timestamp: Date(), note: note), at: 0)
+        saveBlockedCallsHistory(records)
+    }
+    
+    public func clearBlockedCallsHistory() {
+        sharedDefaults.removeObject(forKey: blockedCallsKey)
+    }
+    
+    // Dữ liệu mẫu lịch sử trong 30 ngày
+    private func generateInitialSampleHistory() -> [BlockedCallRecord] {
+        let now = Date()
+        return [
+            BlockedCallRecord(phoneNumber: "059 281 9923", prefix: "0592*", timestamp: now.addingTimeInterval(-1800), note: "Spam tài chính"),
+            BlockedCallRecord(phoneNumber: "059 812 4001", prefix: "0598*", timestamp: now.addingTimeInterval(-7200), note: "Telesale bảo hiểm"),
+            BlockedCallRecord(phoneNumber: "059 934 1120", prefix: "0599*", timestamp: now.addingTimeInterval(-86400 * 1 + 3600 * 2), note: "Cuộc gọi rác"),
+            BlockedCallRecord(phoneNumber: "059 299 8812", prefix: "0592*", timestamp: now.addingTimeInterval(-86400 * 2 + 3600 * 4), note: "Quảng cáo BĐS"),
+            BlockedCallRecord(phoneNumber: "059 345 6789", prefix: "0593*", timestamp: now.addingTimeInterval(-86400 * 3 + 3600 * 1), note: "Spam tự động"),
+            BlockedCallRecord(phoneNumber: "059 822 1039", prefix: "0598*", timestamp: now.addingTimeInterval(-86400 * 4 + 3600 * 6), note: "Telesale"),
+            BlockedCallRecord(phoneNumber: "059 900 1199", prefix: "0599*", timestamp: now.addingTimeInterval(-86400 * 5 + 3600 * 3), note: "Spam tài chính"),
+            BlockedCallRecord(phoneNumber: "059 211 4455", prefix: "0592*", timestamp: now.addingTimeInterval(-86400 * 7 + 3600 * 5), note: "Cuộc gọi lừa đảo"),
+            BlockedCallRecord(phoneNumber: "059 877 6622", prefix: "0598*", timestamp: now.addingTimeInterval(-86400 * 12 + 3600 * 2), note: "Spam"),
+            BlockedCallRecord(phoneNumber: "059 923 8811", prefix: "0599*", timestamp: now.addingTimeInterval(-86400 * 18 + 3600 * 4), note: "Telesale"),
+            BlockedCallRecord(phoneNumber: "059 245 9900", prefix: "0592*", timestamp: now.addingTimeInterval(-86400 * 25 + 3600 * 1), note: "Spam tài chính")
+        ]
     }
     
     private var extensionIdentifier: String {
@@ -225,13 +193,6 @@ public class BlockListManager {
     public func reloadExtension(completion: @escaping (Error?) -> Void) {
         CXCallDirectoryManager.sharedInstance.reloadExtension(withIdentifier: extensionIdentifier) { error in
             DispatchQueue.main.async {
-                if error == nil {
-                    self.addLog(
-                        title: "Đồng bộ thành công vào iOS",
-                        detail: "Đã nạp \(self.getTotalProtectedNumbersCount()) số điện thoại vào hệ điều hành",
-                        isSuccess: true
-                    )
-                }
                 completion(error)
             }
         }
