@@ -43,18 +43,32 @@ struct ContentView: View {
                         syncWithCallKitSilently()
                     }
                     
-                    // Trạng thái cấp quyền trong Cài đặt iPhone
-                    HStack {
-                        Image(systemName: isExtensionEnabledInSettings ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
-                            .foregroundColor(isExtensionEnabledInSettings ? .green : .orange)
-                        Text("Quyền iOS: \(extensionStatusText)")
-                            .font(.footnote)
-                            .foregroundColor(.secondary)
-                        
-                        Spacer()
-                        
-                        if isReloading {
-                            ProgressView().scaleEffect(0.8)
+                    // Trạng thái cấp quyền trong Cài đặt iPhone (BẤM VÀO ĐỂ MỞ CÀI ĐẶT NGAY)
+                    Button(action: openCallBlockingSettings) {
+                        HStack {
+                            Image(systemName: isExtensionEnabledInSettings ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                                .foregroundColor(isExtensionEnabledInSettings ? .green : .orange)
+                            
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text("Quyền iOS: \(extensionStatusText)")
+                                    .font(.subheadline)
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(.primary)
+                                
+                                Text(isExtensionEnabledInSettings ? "Đã sẵn sàng chặn cuộc gọi" : "Chạm vào đây để mở Cài đặt bật quyền")
+                                    .font(.caption2)
+                                    .foregroundColor(isExtensionEnabledInSettings ? .secondary : .orange)
+                            }
+                            
+                            Spacer()
+                            
+                            if isReloading {
+                                ProgressView().scaleEffect(0.8)
+                            } else {
+                                Image(systemName: "chevron.right")
+                                    .font(.caption)
+                                    .foregroundColor(.gray)
+                            }
                         }
                     }
                 }
@@ -144,45 +158,57 @@ struct ContentView: View {
                     }
                 }
                 
-                // MARK: - 4. HƯỚNG DẪN VÀ NÚT MỞ CÀI ĐẶT
-                Section(header: Text("CÀI ĐẶT QUYỀN TRÊN IPHONE").font(.caption).foregroundColor(.gray)) {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("Để chặn cuộc gọi, bạn cần cấp quyền cho ứng dụng:")
-                            .font(.footnote)
-                            .foregroundColor(.secondary)
-                        
-                        HStack(alignment: .top, spacing: 8) {
-                            Text("1.")
-                                .fontWeight(.bold)
-                            Text("Mở **Cài đặt** ➔ **Điện thoại** ➔ **Chặn & Nhận dạng cuộc gọi**.")
-                                .font(.footnote)
-                        }
-                        
-                        HStack(alignment: .top, spacing: 8) {
-                            Text("2.")
-                                .fontWeight(.bold)
-                            Text("Bật công tắc của **Chặn số rác** sang màu xanh.")
-                                .font(.footnote)
-                        }
-                        
-                        // Nút chuyển nhanh vào Cài đặt iOS
-                        Button(action: openPhoneSettings) {
-                            HStack {
-                                Spacer()
-                                Image(systemName: "gearshape.fill")
-                                Text("Mở Cài Đặt (Settings) iPhone")
+                // MARK: - 4. 2 NÚT MỞ CÀI ĐẶT CHUYÊN BIỆT
+                Section(header: Text("TRUY CẬP NHANH CÀI ĐẶT IPHONE").font(.caption).foregroundColor(.gray)) {
+                    // Nút 1: Mở Phone / Call Blocking & Identification
+                    Button(action: openCallBlockingSettings) {
+                        HStack(spacing: 12) {
+                            Image(systemName: "phone.badge.checkmark")
+                                .foregroundColor(.white)
+                                .frame(width: 32, height: 32)
+                                .background(Color.green)
+                                .cornerRadius(8)
+                            
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Mở Cài Đặt Chặn Cuộc Gọi")
                                     .fontWeight(.bold)
-                                Image(systemName: "arrow.up.right")
-                                Spacer()
+                                    .foregroundColor(.primary)
+                                Text("Cài đặt ➔ Điện thoại ➔ Chặn cuộc gọi")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
                             }
-                            .padding(.vertical, 10)
-                            .background(Color.blue)
-                            .foregroundColor(.white)
-                            .cornerRadius(10)
+                            
+                            Spacer()
+                            Image(systemName: "arrow.up.right")
+                                .foregroundColor(.secondary)
                         }
-                        .padding(.top, 4)
+                        .padding(.vertical, 4)
                     }
-                    .padding(.vertical, 4)
+                    
+                    // Nút 2: Mở Cài đặt Nhà phát triển / Quản lý thiết bị
+                    Button(action: openDeveloperDeviceSettings) {
+                        HStack(spacing: 12) {
+                            Image(systemName: "person.crop.circle.badge.checkmark")
+                                .foregroundColor(.white)
+                                .frame(width: 32, height: 32)
+                                .background(Color.blue)
+                                .cornerRadius(8)
+                            
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Mở Quản Lý Thiết Bị (Trust App)")
+                                    .fontWeight(.bold)
+                                    .foregroundColor(.primary)
+                                Text("Cài đặt ➔ Cài đặt chung ➔ VPN & Quản lý thiết bị")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                            
+                            Spacer()
+                            Image(systemName: "arrow.up.right")
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(.vertical, 4)
+                    }
                 }
             }
             .listStyle(InsetGroupedListStyle())
@@ -242,14 +268,12 @@ struct ContentView: View {
         }
     }
     
-    // Tự động đồng bộ ngầm mượt mà, không bật popup làm phiền người dùng
     private func syncWithCallKitSilently() {
         isReloading = true
         BlockListManager.shared.reloadExtension { error in
             isReloading = false
             if let error = error {
-                // Chỉ hiển thị cảnh báo nếu có lỗi thực sự xảy ra
-                self.alertMessage = "Chưa đồng bộ được: \(error.localizedDescription).\n\nVui lòng bấm nút 'Mở Cài Đặt iPhone' bên dưới để bật quyền cho ứng dụng."
+                self.alertMessage = "Chưa đồng bộ được: \(error.localizedDescription).\n\nVui lòng vào Cài đặt -> Điện thoại -> Chặn & Nhận dạng cuộc gọi để bật ứng dụng."
                 self.showAlert = true
             } else {
                 checkExtensionStatus()
@@ -257,12 +281,37 @@ struct ContentView: View {
         }
     }
     
-    // Mở trực tiếp Cài đặt của iPhone
-    private func openPhoneSettings() {
-        if let url = URL(string: UIApplication.openSettingsURLString) {
-            if UIApplication.shared.canOpenURL(url) {
-                UIApplication.shared.open(url, options: [:], completionHandler: nil)
+    // Mở Cài đặt Chặn cuộc gọi (Call Blocking)
+    private func openCallBlockingSettings() {
+        // Thử Deep-link trực tiếp vào trang Điện thoại nếu iOS cho phép, fallback về Cài đặt
+        if let url = URL(string: "App-Prefs:root=Phone"), UIApplication.shared.canOpenURL(url) {
+            UIApplication.shared.open(url, options: [:]) { success in
+                if !success {
+                    openStandardSettings()
+                }
             }
+        } else {
+            openStandardSettings()
+        }
+    }
+    
+    // Mở Cài đặt Quản lý thiết bị & VPN (Trust Developer Profile)
+    private func openDeveloperDeviceSettings() {
+        // Thử Deep-link trực tiếp vào Managed Configuration List
+        if let url = URL(string: "App-Prefs:root=General&path=ManagedConfigurationList"), UIApplication.shared.canOpenURL(url) {
+            UIApplication.shared.open(url, options: [:]) { success in
+                if !success {
+                    openStandardSettings()
+                }
+            }
+        } else {
+            openStandardSettings()
+        }
+    }
+    
+    private func openStandardSettings() {
+        if let url = URL(string: UIApplication.openSettingsURLString) {
+            UIApplication.shared.open(url, options: [:], completionHandler: nil)
         }
     }
 }
