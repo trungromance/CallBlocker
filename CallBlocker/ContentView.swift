@@ -18,6 +18,7 @@ struct ContentView: View {
     @State private var isReloading: Bool = false
     @State private var alertMessage: String = ""
     @State private var showAlert: Bool = false
+    @State private var showHistorySheet: Bool = false
     
     var body: some View {
         NavigationView {
@@ -64,8 +65,8 @@ struct ContentView: View {
                     }
                     .padding(.horizontal)
                     
-                    // MARK: - 2. HEATMAP TẦN SUẤT CHẶN (TÔNG CAM)
-                    VStack(alignment: .leading, spacing: 10) {
+                    // MARK: - 2. HEATMAP TẦN SUẤT CHẶN (BẤM VÀO MỞ DANH SÁCH 30 NGÀY)
+                    VStack(alignment: .leading, spacing: 8) {
                         HStack {
                             Text("TẦN SUẤT CHẶN CUỘC GỌI")
                                 .font(.system(size: 12, weight: .bold))
@@ -73,99 +74,30 @@ struct ContentView: View {
                             
                             Spacer()
                             
-                            Text("30 ngày qua")
-                                .font(.caption2)
-                                .foregroundColor(.orange)
+                            HStack(spacing: 2) {
+                                Text("Xem 30 ngày")
+                                    .font(.caption2)
+                                Image(systemName: "chevron.right")
+                                    .font(.caption2)
+                            }
+                            .foregroundColor(.orange)
                         }
                         .padding(.horizontal, 4)
                         
-                        CallBlockingHeatmapView(blockedCalls: blockedCalls)
-                            .padding(14)
-                            .background(Color(.secondarySystemGroupedBackground))
-                            .cornerRadius(14)
+                        // Bấm vào Heatmap để mở chi tiết lịch sử 30 ngày
+                        Button(action: {
+                            showHistorySheet = true
+                        }) {
+                            CallBlockingHeatmapView(blockedCalls: blockedCalls)
+                                .padding(14)
+                                .background(Color(.secondarySystemGroupedBackground))
+                                .cornerRadius(14)
+                        }
+                        .buttonStyle(PlainButtonStyle())
                     }
                     .padding(.horizontal)
                     
-                    // MARK: - 3. DANH SÁCH LỊCH SỬ CHẶN (30 NGÀY GẦN NHẤT)
-                    VStack(alignment: .leading, spacing: 10) {
-                        HStack {
-                            Text("LỊCH SỬ CHẶN GẦN ĐÂY (\(blockedCalls.count))")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundColor(.secondary)
-                            
-                            Spacer()
-                            
-                            if !blockedCalls.isEmpty {
-                                Button("Xoá") {
-                                    BlockListManager.shared.clearBlockedCallsHistory()
-                                    loadBlockedCalls()
-                                }
-                                .font(.caption2)
-                                .foregroundColor(.red)
-                            }
-                        }
-                        .padding(.horizontal, 4)
-                        
-                        if blockedCalls.isEmpty {
-                            VStack(spacing: 6) {
-                                Image(systemName: "phone.down.circle")
-                                    .font(.system(size: 28))
-                                    .foregroundColor(.gray)
-                                Text("Chưa có cuộc gọi rác nào bị chặn gần đây.")
-                                    .font(.footnote)
-                                    .foregroundColor(.secondary)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 20)
-                            .background(Color(.secondarySystemGroupedBackground))
-                            .cornerRadius(14)
-                        } else {
-                            VStack(spacing: 8) {
-                                ForEach(blockedCalls.prefix(15)) { record in
-                                    HStack(spacing: 12) {
-                                        Image(systemName: "phone.down.fill")
-                                            .foregroundColor(.red)
-                                            .padding(8)
-                                            .background(Color.red.opacity(0.12))
-                                            .clipShape(Circle())
-                                        
-                                        VStack(alignment: .leading, spacing: 2) {
-                                            HStack {
-                                                Text(record.phoneNumber)
-                                                    .font(.subheadline)
-                                                    .fontWeight(.semibold)
-                                                    .foregroundColor(.primary)
-                                                
-                                                Text(record.prefix)
-                                                    .font(.caption2)
-                                                    .padding(.horizontal, 6)
-                                                    .padding(.vertical, 2)
-                                                    .background(Color.orange.opacity(0.15))
-                                                    .foregroundColor(.orange)
-                                                    .cornerRadius(4)
-                                            }
-                                            
-                                            Text(record.note)
-                                                .font(.caption2)
-                                                .foregroundColor(.secondary)
-                                        }
-                                        
-                                        Spacer()
-                                        
-                                        Text(timeAgoDisplay(date: record.timestamp))
-                                            .font(.caption2)
-                                            .foregroundColor(.gray)
-                                    }
-                                    .padding(10)
-                                    .background(Color(.secondarySystemGroupedBackground))
-                                    .cornerRadius(12)
-                                }
-                            }
-                        }
-                    }
-                    .padding(.horizontal)
-                    
-                    // MARK: - 4. KHUNG THÊM ĐẦU SỐ MỚI
+                    // MARK: - 3. KHUNG THÊM ĐẦU SỐ MỚI
                     VStack(alignment: .leading, spacing: 10) {
                         Text("THÊM ĐẦU SỐ CẦN CHẶN")
                             .font(.system(size: 12, weight: .bold))
@@ -227,7 +159,7 @@ struct ContentView: View {
                     }
                     .padding(.horizontal)
                     
-                    // MARK: - 5. DANH SÁCH ĐẦU SỐ ĐANG CHẶN
+                    // MARK: - 4. DANH SÁCH ĐẦU SỐ ĐANG CHẶN
                     VStack(alignment: .leading, spacing: 10) {
                         HStack {
                             Text("QUY TẮC ĐẦU SỐ (\(rules.count))")
@@ -293,6 +225,9 @@ struct ContentView: View {
             }
             .background(Color(.systemGroupedBackground).ignoresSafeArea())
             .navigationBarHidden(true)
+            .sheet(isPresented: $showHistorySheet) {
+                BlockedCallsHistorySheet(blockedCalls: $blockedCalls)
+            }
             .onAppear {
                 loadRules()
                 loadBlockedCalls()
@@ -367,24 +302,9 @@ struct ContentView: View {
             }
         }
     }
-    
-    private func timeAgoDisplay(date: Date) -> String {
-        let seconds = Int(Date().timeIntervalSince(date))
-        if seconds < 60 {
-            return "Vừa xong"
-        } else if seconds < 3600 {
-            return "\(seconds / 60) phút trước"
-        } else if seconds < 86400 {
-            return "\(seconds / 3600) giờ trước"
-        } else {
-            let days = seconds / 86400
-            if days == 1 { return "Hôm qua" }
-            return "\(days) ngày trước"
-        }
-    }
 }
 
-// MARK: - HEATMAP COMPONENT (TÔNG CAM THEO ẢNH MẪU)
+// MARK: - HEATMAP COMPONENT (HỖ TRỢ DARK MODE & DỮ LIỆU THỰC TẾ 100%)
 struct CallBlockingHeatmapView: View {
     let blockedCalls: [BlockedCallRecord]
     
@@ -404,9 +324,8 @@ struct CallBlockingHeatmapView: View {
         "10:00 PM"
     ]
     
-    // Tạo ma trận phân bố tần suất chặn cuộc gọi theo ngày và giờ
+    // Tính toán 100% dữ liệu thực tế từ danh sách cuộc gọi đã chặn
     var gridMatrix: [[Int]] {
-        // 12 hàng (timeSlots) x 7 cột (days)
         var matrix = Array(repeating: Array(repeating: 0, count: 7), count: 12)
         let calendar = Calendar.current
         
@@ -418,21 +337,6 @@ struct CallBlockingHeatmapView: View {
                 matrix[row][weekday] += 1
             }
         }
-        
-        // Bổ sung các điểm phân bố mẫu ngẫu nhiên nhẹ nếu ít dữ liệu để hiển thị đẹp mắt
-        if blockedCalls.count <= 15 {
-            matrix[4][2] = 1 // T3 8h
-            matrix[5][2] = 2 // T3 10h
-            matrix[6][3] = 3 // T4 12h
-            matrix[7][3] = 4 // T4 14h
-            matrix[6][5] = 4 // T6 12h
-            matrix[5][5] = 2 // T6 10h
-            matrix[7][4] = 3 // T5 14h
-            matrix[8][4] = 2 // T5 16h
-            matrix[10][3] = 4 // T4 20h
-            matrix[3][4] = 1 // T5 6h
-        }
-        
         return matrix
     }
     
@@ -455,11 +359,11 @@ struct CallBlockingHeatmapView: View {
             VStack(spacing: 3) {
                 ForEach(0..<12, id: \.self) { row in
                     HStack(spacing: 4) {
-                        // Nhãn giờ (chỉ hiện các mốc chính như 12 AM, 6 AM, 12 PM, 6 PM)
+                        // Nhãn giờ (12 AM, 6 AM, 12 PM, 6 PM)
                         if row == 0 || row == 3 || row == 6 || row == 9 {
                             Text(timeSlots[row])
                                 .font(.system(size: 9))
-                                .foregroundColor(.gray)
+                                .foregroundColor(.secondary)
                                 .frame(width: 54, alignment: .leading)
                         } else {
                             Text("")
@@ -467,17 +371,10 @@ struct CallBlockingHeatmapView: View {
                                 .frame(width: 54, alignment: .leading)
                         }
                         
-                        // 7 ô hình chữ nhật bo góc theo tông cam
+                        // 7 ô hình chữ nhật bo góc tương thích Dark Mode & Light Mode
                         ForEach(0..<7, id: \.self) { col in
                             let count = gridMatrix[row][col]
-                            RoundedRectangle(cornerRadius: 3)
-                                .fill(orangeColor(for: count))
-                                .frame(height: 11)
-                                .frame(maxWidth: .infinity)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 3)
-                                        .stroke(Color.orange.opacity(0.12), lineWidth: 0.5)
-                                )
+                            HeatmapCellView(count: count)
                         }
                     }
                 }
@@ -490,21 +387,20 @@ struct CallBlockingHeatmapView: View {
                     .font(.system(size: 10))
                     .foregroundColor(.secondary)
                 
-                RoundedRectangle(cornerRadius: 2)
-                    .fill(Color(.systemGray6))
-                    .frame(width: 12, height: 10)
+                HeatmapCellView(count: 0)
+                    .frame(width: 14, height: 10)
                 
-                RoundedRectangle(cornerRadius: 2)
-                    .fill(Color(red: 1.0, green: 0.88, blue: 0.75))
-                    .frame(width: 12, height: 10)
+                HeatmapCellView(count: 1)
+                    .frame(width: 14, height: 10)
                 
-                RoundedRectangle(cornerRadius: 2)
-                    .fill(Color(red: 1.0, green: 0.65, blue: 0.35))
-                    .frame(width: 12, height: 10)
+                HeatmapCellView(count: 2)
+                    .frame(width: 14, height: 10)
                 
-                RoundedRectangle(cornerRadius: 2)
-                    .fill(Color(red: 0.90, green: 0.35, blue: 0.05))
-                    .frame(width: 12, height: 10)
+                HeatmapCellView(count: 3)
+                    .frame(width: 14, height: 10)
+                
+                HeatmapCellView(count: 4)
+                    .frame(width: 14, height: 10)
                 
                 Text("Nhiều")
                     .font(.system(size: 10))
@@ -513,20 +409,127 @@ struct CallBlockingHeatmapView: View {
             .padding(.top, 4)
         }
     }
+}
+
+// Cell Heatmap tương thích chuẩn Dark Mode
+struct HeatmapCellView: View {
+    @Environment(\.colorScheme) var colorScheme
+    let count: Int
     
-    // Hàm tính màu cam theo tần suất
-    private func orangeColor(for count: Int) -> Color {
-        switch count {
-        case 0:
-            return Color(red: 0.99, green: 0.97, blue: 0.95)
-        case 1:
-            return Color(red: 1.0, green: 0.88, blue: 0.75) // Cam rất nhạt
-        case 2:
-            return Color(red: 1.0, green: 0.75, blue: 0.50) // Cam nhạt
-        case 3:
-            return Color(red: 1.0, green: 0.55, blue: 0.20) // Cam vừa
-        default:
-            return Color(red: 0.90, green: 0.32, blue: 0.05) // Cam đậm (tần suất cao nhất)
+    var body: some View {
+        RoundedRectangle(cornerRadius: 3)
+            .fill(cellColor)
+            .frame(height: 11)
+            .frame(maxWidth: .infinity)
+            .overlay(
+                RoundedRectangle(cornerRadius: 3)
+                    .stroke(borderColor, lineWidth: 0.5)
+            )
+    }
+    
+    private var cellColor: Color {
+        if count == 0 {
+            return colorScheme == .dark
+                ? Color(white: 0.18)
+                : Color(white: 0.94)
+        } else if count == 1 {
+            return Color.orange.opacity(0.35)
+        } else if count == 2 {
+            return Color.orange.opacity(0.60)
+        } else if count == 3 {
+            return Color.orange.opacity(0.85)
+        } else {
+            return Color.orange
+        }
+    }
+    
+    private var borderColor: Color {
+        if count == 0 {
+            return colorScheme == .dark
+                ? Color.white.opacity(0.06)
+                : Color.black.opacity(0.04)
+        } else {
+            return Color.orange.opacity(0.3)
+        }
+    }
+}
+
+// MARK: - SHEET DANH SÁCH LỊCH SỬ CHẶN 30 NGÀY
+struct BlockedCallsHistorySheet: View {
+    @Environment(\.presentationMode) var presentationMode
+    @Binding var blockedCalls: [BlockedCallRecord]
+    
+    var body: some View {
+        NavigationView {
+            List {
+                if blockedCalls.isEmpty {
+                    Section {
+                        VStack(spacing: 8) {
+                            Image(systemName: "phone.badge.checkmark")
+                                .font(.system(size: 40))
+                                .foregroundColor(.gray)
+                            Text("Chưa có cuộc gọi rác nào trong 30 ngày qua.")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 32)
+                    }
+                } else {
+                    Section(header: Text("DANH SÁCH CUỘC GỌI ĐÃ CHẶN (\(blockedCalls.count))")) {
+                        ForEach(blockedCalls) { record in
+                            HStack(spacing: 12) {
+                                Image(systemName: "phone.down.fill")
+                                    .foregroundColor(.red)
+                                    .padding(8)
+                                    .background(Color.red.opacity(0.12))
+                                    .clipShape(Circle())
+                                
+                                VStack(alignment: .leading, spacing: 3) {
+                                    HStack {
+                                        Text(record.phoneNumber)
+                                            .font(.headline)
+                                            .foregroundColor(.primary)
+                                        
+                                        Text(record.prefix)
+                                            .font(.caption2)
+                                            .padding(.horizontal, 6)
+                                            .padding(.vertical, 2)
+                                            .background(Color.orange.opacity(0.15))
+                                            .foregroundColor(.orange)
+                                            .cornerRadius(4)
+                                    }
+                                    
+                                    Text(record.note)
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
+                                
+                                Spacer()
+                                
+                                Text(record.timestamp.formatted(date: .abbreviated, time: .shortened))
+                                    .font(.caption2)
+                                    .foregroundColor(.gray)
+                            }
+                            .padding(.vertical, 4)
+                        }
+                    }
+                }
+            }
+            .listStyle(InsetGroupedListStyle())
+            .navigationTitle("Lịch Sử 30 Ngày")
+            .navigationBarItems(
+                leading: Button("Xoá tất cả") {
+                    BlockListManager.shared.clearBlockedCallsHistory()
+                    blockedCalls = []
+                }
+                .foregroundColor(.red)
+                .disabled(blockedCalls.isEmpty),
+                trailing: Button("Đóng") {
+                    presentationMode.wrappedValue.dismiss()
+                }
+                .foregroundColor(.orange)
+            )
         }
     }
 }

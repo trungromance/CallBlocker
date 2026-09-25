@@ -129,21 +129,18 @@ public class BlockListManager {
         }
     }
     
-    // MARK: - Quản lý Lịch sử cuộc gọi bị chặn 30 ngày (Blocked Calls History)
+    // MARK: - Quản lý Lịch sử cuộc gọi bị chặn 30 ngày (100% dữ liệu thực tế)
     public func getBlockedCallsHistory() -> [BlockedCallRecord] {
         let thirtyDaysAgo = Date().addingTimeInterval(-30 * 24 * 3600)
         
         guard let data = sharedDefaults.data(forKey: blockedCallsKey),
-              var records = try? JSONDecoder().decode([BlockedCallRecord].self, from: data) else {
-            // Mẫu lịch sử thực tế khởi tạo ban đầu trong 30 ngày
-            let sampleRecords = generateInitialSampleHistory()
-            saveBlockedCallsHistory(sampleRecords)
-            return sampleRecords
+              let records = try? JSONDecoder().decode([BlockedCallRecord].self, from: data) else {
+            return []
         }
         
-        // Lọc chỉ giữ lại các cuộc gọi trong vòng 30 ngày
-        records = records.filter { $0.timestamp >= thirtyDaysAgo }
-        return records.sorted(by: { $0.timestamp > $1.timestamp })
+        // Lọc nghiêm ngặt trong 30 ngày gần nhất
+        let filtered = records.filter { $0.timestamp >= thirtyDaysAgo }
+        return filtered.sorted(by: { $0.timestamp > $1.timestamp })
     }
     
     public func saveBlockedCallsHistory(_ records: [BlockedCallRecord]) {
@@ -162,24 +159,6 @@ public class BlockListManager {
     
     public func clearBlockedCallsHistory() {
         sharedDefaults.removeObject(forKey: blockedCallsKey)
-    }
-    
-    // Dữ liệu mẫu lịch sử trong 30 ngày
-    private func generateInitialSampleHistory() -> [BlockedCallRecord] {
-        let now = Date()
-        return [
-            BlockedCallRecord(phoneNumber: "059 281 9923", prefix: "0592*", timestamp: now.addingTimeInterval(-1800), note: "Spam tài chính"),
-            BlockedCallRecord(phoneNumber: "059 812 4001", prefix: "0598*", timestamp: now.addingTimeInterval(-7200), note: "Telesale bảo hiểm"),
-            BlockedCallRecord(phoneNumber: "059 934 1120", prefix: "0599*", timestamp: now.addingTimeInterval(-86400 * 1 + 3600 * 2), note: "Cuộc gọi rác"),
-            BlockedCallRecord(phoneNumber: "059 299 8812", prefix: "0592*", timestamp: now.addingTimeInterval(-86400 * 2 + 3600 * 4), note: "Quảng cáo BĐS"),
-            BlockedCallRecord(phoneNumber: "059 345 6789", prefix: "0593*", timestamp: now.addingTimeInterval(-86400 * 3 + 3600 * 1), note: "Spam tự động"),
-            BlockedCallRecord(phoneNumber: "059 822 1039", prefix: "0598*", timestamp: now.addingTimeInterval(-86400 * 4 + 3600 * 6), note: "Telesale"),
-            BlockedCallRecord(phoneNumber: "059 900 1199", prefix: "0599*", timestamp: now.addingTimeInterval(-86400 * 5 + 3600 * 3), note: "Spam tài chính"),
-            BlockedCallRecord(phoneNumber: "059 211 4455", prefix: "0592*", timestamp: now.addingTimeInterval(-86400 * 7 + 3600 * 5), note: "Cuộc gọi lừa đảo"),
-            BlockedCallRecord(phoneNumber: "059 877 6622", prefix: "0598*", timestamp: now.addingTimeInterval(-86400 * 12 + 3600 * 2), note: "Spam"),
-            BlockedCallRecord(phoneNumber: "059 923 8811", prefix: "0599*", timestamp: now.addingTimeInterval(-86400 * 18 + 3600 * 4), note: "Telesale"),
-            BlockedCallRecord(phoneNumber: "059 245 9900", prefix: "0592*", timestamp: now.addingTimeInterval(-86400 * 25 + 3600 * 1), note: "Spam tài chính")
-        ]
     }
     
     private var extensionIdentifier: String {
