@@ -14,7 +14,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "30000000"
+               BlueprintIdentifier = "40000001"
                BuildableName = "CallBlocker.app"
                BlueprintName = "CallBlocker"
                ReferencedContainer = "container:CallBlocker.xcodeproj">
@@ -28,7 +28,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "30000001"
+               BlueprintIdentifier = "40000002"
                BuildableName = "CallBlockerExtension.appex"
                BlueprintName = "CallBlockerExtension"
                ReferencedContainer = "container:CallBlocker.xcodeproj">
@@ -58,7 +58,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "30000000"
+            BlueprintIdentifier = "40000001"
             BuildableName = "CallBlocker.app"
             BlueprintName = "CallBlocker"
             ReferencedContainer = "container:CallBlocker.xcodeproj">
@@ -75,7 +75,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "30000000"
+            BlueprintIdentifier = "40000001"
             BuildableName = "CallBlocker.app"
             BlueprintName = "CallBlocker"
             ReferencedContainer = "container:CallBlocker.xcodeproj">
