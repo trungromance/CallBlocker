@@ -14,16 +14,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Select Xcode Version
-        run: sudo xcode-select -switch /Applications/Xcode_15.4.app/Contents/Developer
-
-      - name: Build Archive
+      - name: Build App & Extension
         run: |
-          xcodebuild archive \
+          xcodebuild build \
             -project CallBlocker.xcodeproj \
             -scheme CallBlocker \
             -configuration Release \
-            -archivePath build/CallBlocker.xcarchive \
+            -sdk iphoneos \
+            -destination "generic/platform=iOS" \
+            -derivedDataPath build/DerivedData \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
@@ -32,7 +31,9 @@ jobs:
       - name: Package Payload and Create .IPA
         run: |
           mkdir -p build/Payload
-          cp -r build/CallBlocker.xcarchive/Products/Applications/CallBlocker.app build/Payload/
+          APP_PATH=$(find build/DerivedData/Build/Products/Release-iphoneos -maxdepth 1 -name "CallBlocker.app")
+          echo "Found app at: $APP_PATH"
+          cp -r "$APP_PATH" build/Payload/
           cd build
           zip -r CallBlocker.ipa Payload
           cd ..
