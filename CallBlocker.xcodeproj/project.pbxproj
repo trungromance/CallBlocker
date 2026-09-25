@@ -15,6 +15,7 @@
 		30000006 /* BlockListManager.swift in Sources (Ext) */ = {isa = PBXBuildFile; fileRef = 20000003 /* BlockListManager.swift */; };
 		30000007 /* PhoneNumberGenerator.swift in Sources (Ext) */ = {isa = PBXBuildFile; fileRef = 20000004 /* PhoneNumberGenerator.swift */; };
 		30000008 /* CallBlockerExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 20000011 /* CallBlockerExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		30000009 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 20000012 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -53,6 +54,7 @@
 		20000009 /* CallBlockerExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CallBlockerExtension.entitlements; sourceTree = "<group>"; };
 		20000010 /* CallBlocker.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CallBlocker.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		20000011 /* CallBlockerExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CallBlockerExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		20000012 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -88,6 +90,7 @@
 			children = (
 				20000001 /* CallBlockerApp.swift */,
 				20000002 /* ContentView.swift */,
+				20000012 /* Assets.xcassets */,
 				20000006 /* Info.plist */,
 				20000007 /* CallBlocker.entitlements */,
 			);
@@ -131,6 +134,7 @@
 			buildPhases = (
 				70000001 /* Sources */,
 				80000001 /* Frameworks */,
+				E0000001 /* Resources */,
 				90000001 /* Embed App Extensions */,
 			);
 			buildRules = (
@@ -195,6 +199,17 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		E0000001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				30000009 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		70000001 /* Sources */ = {
@@ -289,7 +304,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CallBlocker/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Chặn 059";
+				INFOPLIST_KEY_CFBundleDisplayName = "Chặn số rác";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -298,7 +313,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.altserver.callblocker;
+				PRODUCT_BUNDLE_IDENTIFIER = com.trungromance.callblocker;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -316,7 +331,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CallBlocker/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Chặn 059";
+				INFOPLIST_KEY_CFBundleDisplayName = "Chặn số rác";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -325,7 +340,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.altserver.callblocker;
+				PRODUCT_BUNDLE_IDENTIFIER = com.trungromance.callblocker;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -349,7 +364,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.altserver.callblocker.extension;
+				PRODUCT_BUNDLE_IDENTIFIER = com.trungromance.callblocker.extension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -373,7 +388,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.altserver.callblocker.extension;
+				PRODUCT_BUNDLE_IDENTIFIER = com.trungromance.callblocker.extension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;

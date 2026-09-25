@@ -181,7 +181,7 @@ struct ContentView: View {
                         HStack(alignment: .top) {
                             Text("4.")
                                 .fontWeight(.bold)
-                            Text("BẬT công tắc của ứng dụng **Call Blocker**.")
+                            Text("BẬT công tắc của ứng dụng **Chặn số rác**.")
                         }
                     }
                     .font(.footnote)
@@ -190,7 +190,7 @@ struct ContentView: View {
                 }
             }
             .listStyle(InsetGroupedListStyle())
-            .navigationTitle("Chặn Cuộc Gọi 059*")
+            .navigationTitle("Chặn Số Rác")
             .onAppear {
                 loadRules()
                 checkExtensionStatus()
